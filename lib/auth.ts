@@ -10,15 +10,26 @@ export interface JWTPayload {
 }
 
 export class AuthService {
-  private static readonly JWT_SECRET = process.env.JWT_SECRET!;
+  // Validate that JWT_SECRET exists and is sufficiently strong
+  private static readonly JWT_SECRET = (() => {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      throw new Error("JWT_SECRET environment variable is required");
+    }
+    if (secret.length < 32) {
+      throw new Error("JWT_SECRET must be at least 32 characters long");
+    }
+    return secret;
+  })();
+
   private static readonly JWT_EXPIRES_IN = "24h";
 
-  // Hash password
+  /** Hash a plaintext password */
   static async hashPassword(password: string): Promise<string> {
     return bcrypt.hash(password, 12);
   }
 
-  // Compare password
+  /** Compare plaintext to hashed password */
   static async comparePassword(
     password: string,
     hashedPassword: string
@@ -26,45 +37,35 @@ export class AuthService {
     return bcrypt.compare(password, hashedPassword);
   }
 
-  // Generate JWT token
+  /** Generate a signed JWT */
   static generateToken(payload: JWTPayload): string {
     return jwt.sign(payload, this.JWT_SECRET, {
       expiresIn: this.JWT_EXPIRES_IN,
     });
   }
 
-  // Verify JWT token
+  /** Verify a JWT and return its payload or null */
   static verifyToken(token: string): JWTPayload | null {
     try {
       return jwt.verify(token, this.JWT_SECRET) as JWTPayload;
-    } catch (error) {
+    } catch {
       return null;
     }
   }
 
-  // Authenticate user
+  /** Authenticate a user and return a JWT on success */
   static async authenticateUser(userid: string, password: string) {
     try {
-      // Find user in database
-      const user = await db.user.findUnique({
-        where: { userid },
-      });
-
+      const user = await db.user.findUnique({ where: { userid } });
       if (!user) {
         return { success: false, message: "Invalid credentials" };
       }
 
-      // Check password
-      const isPasswordValid = await this.comparePassword(
-        password,
-        user.password
-      );
-
-      if (!isPasswordValid) {
+      const valid = await this.comparePassword(password, user.password);
+      if (!valid) {
         return { success: false, message: "Invalid credentials" };
       }
 
-      // Generate token
       const token = this.generateToken({
         id: user.id,
         userid: user.userid,
@@ -88,7 +89,7 @@ export class AuthService {
     }
   }
 
-  // Create user (for initial setup)
+  /** Create a new user (for setup) with role-based orgId validation */
   static async createUser(
     userid: string,
     password: string,
@@ -96,39 +97,24 @@ export class AuthService {
     orgId: string | null = null
   ) {
     try {
-      // Validate orgId based on role
       if (role === "ORGANIZATION_ADMIN" && !orgId) {
         return {
           success: false,
           message: "Organization ID is required for Organization Admin",
         };
       }
-
-      if (role === "SUPER_ADMIN" && orgId) {
-        // Set orgId to null for super admin
+      if (role === "SUPER_ADMIN") {
         orgId = null;
       }
 
-      // Check if user already exists
-      const existingUser = await db.user.findUnique({
-        where: { userid },
-      });
-
-      if (existingUser) {
+      const existing = await db.user.findUnique({ where: { userid } });
+      if (existing) {
         return { success: false, message: "User already exists" };
       }
 
-      // Hash password
-      const hashedPassword = await this.hashPassword(password);
-
-      // Create user
+      const hashed = await this.hashPassword(password);
       const user = await db.user.create({
-        data: {
-          userid,
-          password: hashedPassword,
-          role,
-          orgId,
-        },
+        data: { userid, password: hashed, role, orgId },
         select: {
           id: true,
           userid: true,
