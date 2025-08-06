@@ -13,6 +13,7 @@ export class AuthService {
   // Validate that JWT_SECRET exists and is sufficiently strong
   private static readonly JWT_SECRET = (() => {
     const secret = process.env.JWT_SECRET;
+    console.log("JWT_SECRET exists:", !!secret, "Length:", secret?.length); // Debug log
     if (!secret) {
       throw new Error("JWT_SECRET environment variable is required");
     }
@@ -39,16 +40,30 @@ export class AuthService {
 
   /** Generate a signed JWT */
   static generateToken(payload: JWTPayload): string {
-    return jwt.sign(payload, this.JWT_SECRET, {
+    console.log("Generating token for payload:", payload); // Debug log
+    const token = jwt.sign(payload, this.JWT_SECRET, {
       expiresIn: this.JWT_EXPIRES_IN,
     });
+    console.log(
+      "Generated token (first 50 chars):",
+      token.substring(0, 50) + "..."
+    ); // Debug log
+    return token;
   }
 
   /** Verify a JWT and return its payload or null */
   static verifyToken(token: string): JWTPayload | null {
     try {
-      return jwt.verify(token, this.JWT_SECRET) as JWTPayload;
-    } catch {
+      console.log(
+        "Verifying token (first 50 chars):",
+        token.substring(0, 50) + "..."
+      ); // Debug log
+      console.log("JWT_SECRET for verification exists:", !!this.JWT_SECRET); // Debug log
+      const payload = jwt.verify(token, this.JWT_SECRET) as JWTPayload;
+      console.log("Token verification successful:", payload); // Debug log
+      return payload;
+    } catch (error) {
+      console.error("Token verification failed:", error); // Debug log
       return null;
     }
   }

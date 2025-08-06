@@ -48,11 +48,35 @@ export default function LoginPage() {
       });
 
       const result = await response.json();
+      console.log("Login response:", result);
 
       if (result.success) {
-        // Redirect based on user role or to a general dashboard
-        router.push("/dashboard");
-        router.refresh();
+        console.log("Login successful, user role:", result.user?.role);
+
+        // Role-based redirection - direct to specific dashboards only
+        let redirectPath: string;
+
+        switch (result.user?.role) {
+          case "SUPER_ADMIN":
+            redirectPath = "/dashboard/super-admin";
+            break;
+          case "ORGANIZATION_ADMIN":
+            redirectPath = "/dashboard/organization";
+            break;
+          default:
+            // If no specific role, redirect to login (shouldn't happen)
+            redirectPath = "/login";
+            setError("Invalid user role. Please contact administrator.");
+            setIsLoading(false);
+            return;
+        }
+
+        console.log("Redirecting to:", redirectPath);
+
+        // Give a small delay to ensure cookie is set, then redirect
+        setTimeout(() => {
+          window.location.href = redirectPath;
+        }, 100);
       } else {
         setError(result.message || "Login failed. Please try again.");
       }

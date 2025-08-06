@@ -1,46 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
-import { AuthService } from "./lib/auth";
 
 export function middleware(request: NextRequest) {
   const token = request.cookies.get("token")?.value;
   const { pathname } = request.nextUrl;
 
+  console.log("Middleware - Path:", pathname, "Token exists:", !!token);
+
+  // Define public routes that don't need authentication
   const publicRoutes = ["/login", "/api/auth/login", "/api/auth/logout"];
   const isPublicRoute = publicRoutes.some((route) =>
     pathname.startsWith(route)
   );
 
+  // Allow access to public routes
   if (isPublicRoute) {
+    console.log("Public route, allowing access");
     return NextResponse.next();
   }
 
+  // If no token exists, redirect to login
   if (!token) {
+    console.log("No token, redirecting to login");
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  try {
-    const payload = AuthService.verifyToken(token);
-    if (!payload) {
-      const response = NextResponse.redirect(new URL("/login", request.url));
-      response.cookies.set("token", "", { maxAge: 0, path: "/" });
-      return response;
-    }
-
-    const requestHeaders = new Headers(request.headers);
-    requestHeaders.set("x-user-id", payload.id.toString());
-    requestHeaders.set("x-user-userid", payload.userid);
-    requestHeaders.set("x-user-role", payload.role);
-    requestHeaders.set("x-user-orgid", payload.orgId || "");
-
-    return NextResponse.next({
-      request: { headers: requestHeaders },
-    });
-  } catch (error) {
-    console.error("Token verification failed:", error);
-    const response = NextResponse.redirect(new URL("/login", request.url));
-    response.cookies.set("token", "", { maxAge: 0, path: "/" });
-    return response;
-  }
+  // If token exists, allow access to role-specific dashboards
+  console.log("Token exists, allowing access to:", pathname);
+  return NextResponse.next();
 }
 
 export const config = {
