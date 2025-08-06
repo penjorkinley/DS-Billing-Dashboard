@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import logo from "@/public/ndi-logo.svg";
 import {
   Card,
   CardContent,
@@ -89,148 +90,139 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left Side - Login Form */}
-      <div className="flex-1 flex items-center justify-center p-8 bg-background">
-        <div className="w-full max-w-md animate-fade-in">
-          {/* Logo */}
-          <div className="mb-8 text-center">
-            <Image
-              src="/logo.svg"
-              alt="Bhutan NDI"
-              width={120}
-              height={40}
-              priority
-              className="mx-auto mb-4"
-            />
-          </div>
-
-          <Card className="border-border shadow-lg">
-            <CardHeader className="space-y-2 text-center">
-              <CardTitle className="text-2xl font-bold text-brand-primary">
-                Kuzuzangpo!
-              </CardTitle>
-              <CardDescription className="text-muted-foreground">
-                <span className="text-brand-secondary font-medium">Login</span>{" "}
-                to your Admin Dashboard
-              </CardDescription>
-            </CardHeader>
-
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Error Alert */}
-                {error && (
-                  <Alert variant="destructive">
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
-
-                {/* Client ID Field */}
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="userid"
-                    className="text-sm font-medium text-foreground"
-                  >
-                    Client ID
-                  </Label>
-                  <Input
-                    id="userid"
-                    name="userid"
-                    type="text"
-                    placeholder="UserID"
-                    value={formData.userid}
-                    onChange={handleInputChange}
-                    disabled={isLoading}
-                    className="h-11 focus-visible:ring-brand-primary"
-                    required
-                  />
-                </div>
-
-                {/* Client Secret Field */}
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="password"
-                    className="text-sm font-medium text-foreground"
-                  >
-                    Client Secret
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="password"
-                      name="password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="••••••••••"
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      disabled={isLoading}
-                      className="h-11 pr-12 focus-visible:ring-brand-primary"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      disabled={isLoading}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Login Button */}
-                <Button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full h-11 bg-brand-primary hover:bg-brand-primary/90 text-primary-foreground font-medium transition-colors"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Signing in...
-                    </>
-                  ) : (
-                    "Login"
-                  )}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-
-          {/* Test Credentials Info */}
-          <div className="mt-6 p-4 bg-muted rounded-lg">
-            <p className="text-sm text-muted-foreground text-center mb-2 font-medium">
-              Test Credentials:
-            </p>
-            <div className="space-y-1 text-xs text-muted-foreground">
-              <p>
-                <strong>Super Admin:</strong> superadmin / SuperAdmin123!
-              </p>
-              <p>
-                <strong>Org Admin 1:</strong> orgadmin1 / OrgAdmin123!
-              </p>
-              <p>
-                <strong>Org Admin 2:</strong> orgadmin2 / OrgAdmin123!
-              </p>
-            </div>
-          </div>
+    <div className="h-screen flex flex-col bg-background overflow-hidden">
+      {/* Top Logo/Navbar Section - Full Width */}
+      <div className="w-full px-4 sm:px-8 lg:px-16 pt-12 pb-8 lg:py-6 flex-shrink-0">
+        <div className="flex justify-center lg:justify-start">
+          <Image src={logo} alt="Bhutan NDI" width={200} height={50} priority />
         </div>
       </div>
 
-      {/* Right Side - Hero Illustration */}
-      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-brand-primary/5 via-brand-secondary/5 to-brand-primary/10 items-center justify-center p-8">
-        <div className="max-w-md animate-fade-in">
-          <Image
-            src="/login-hero-img.svg"
-            alt="Login illustration"
-            width={500}
-            height={400}
-            priority
-            className="w-full h-auto"
-          />
+      {/* Main Content Area - Two Columns on large screens, single column on mobile */}
+      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+        {/* Login Form Section */}
+        <div className="w-full lg:w-[45%] flex items-center justify-center px-4 sm:px-8 py-4 lg:py-8">
+          <div
+            className="w-full max-w-sm lg:max-w-sm animate-fade-in"
+            style={{ animationDuration: ".8s" }}
+          >
+            <Card className="border-none shadow-none">
+              <CardHeader className="space-y-2 lg:space-y-3 text-center px-0">
+                <CardTitle className="text-3xl sm:text-4xl lg:text-4xl font-bold text-brand-primary">
+                  Kuzuzangpo!
+                </CardTitle>
+                <CardDescription className="text-sm sm:text-base text-muted-foreground">
+                  <span className="text-brand-secondary font-medium">
+                    Login
+                  </span>{" "}
+                  to your Billing Dashboard
+                </CardDescription>
+              </CardHeader>
+
+              <CardContent className="px-0">
+                <form
+                  onSubmit={handleSubmit}
+                  className="space-y-3 sm:space-y-4"
+                >
+                  {/* Error Alert */}
+                  {error && (
+                    <Alert variant="destructive">
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  )}
+
+                  {/* Client ID Field */}
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="userid"
+                      className="text-sm font-medium text-foreground"
+                    >
+                      Client ID
+                    </Label>
+                    <Input
+                      id="userid"
+                      name="userid"
+                      type="text"
+                      placeholder="UserID"
+                      value={formData.userid}
+                      onChange={handleInputChange}
+                      disabled={isLoading}
+                      className="h-12 sm:h-11 focus-visible:ring-1 focus-visible:ring-brand-primary placeholder:text-gray-400"
+                      required
+                    />
+                  </div>
+
+                  {/* Client Secret Field */}
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="password"
+                      className="text-sm font-medium text-foreground"
+                    >
+                      Client Secret
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        name="password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••••"
+                        value={formData.password}
+                        onChange={handleInputChange}
+                        disabled={isLoading}
+                        className="h-12 sm:h-11 pr-12 focus-visible:ring-1 focus-visible:ring-brand-primary placeholder:text-gray-400"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        disabled={isLoading}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Login Button */}
+                  <Button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full h-12 sm:h-11 bg-brand-primary hover:bg-brand-primary/90 text-white font-medium transition-colors"
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Signing in...
+                      </>
+                    ) : (
+                      "Login"
+                    )}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Right Side - Hero Illustration (Hidden on mobile, visible on large screens) */}
+        <div className="hidden lg:flex lg:w-[55%] bg-gradient-to-br from-brand-primary/5 via-brand-secondary/5 to-brand-primary/10 items-center justify-center p-4 lg:p-8 overflow-hidden">
+          <div
+            className="w-full h-full max-w-4xl max-h-full flex items-center justify-center animate-fade-in"
+            style={{ animationDuration: ".8s" }}
+          >
+            <Image
+              src="/login-hero-img.svg"
+              alt="Login illustration"
+              width={1200}
+              height={800}
+              priority
+              className="w-full h-auto max-h-full object-contain"
+            />
+          </div>
         </div>
       </div>
     </div>
