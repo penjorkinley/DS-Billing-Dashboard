@@ -1,10 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/lib/toast-context";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/lib/toast-context";
 import {
   Card,
   CardContent,
@@ -21,47 +20,24 @@ import {
   UserPlus,
   Building2,
   Bell,
+  Loader2,
 } from "lucide-react";
 
 export default function OrganizationAdminDashboard() {
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const router = useRouter();
+  const { user, loading, error, logout, isAuthenticated } = useAuth({
+    requiredRole: "ORGANIZATION_ADMIN",
+  });
   const { showToast } = useToast();
 
   const handleLogout = async () => {
-    setIsLoggingOut(true);
-
     try {
-      const response = await fetch("/api/auth/logout", {
-        method: "POST",
+      await logout();
+      showToast({
+        type: "success",
+        title: "Logged Out",
+        message: "You have been successfully logged out. Redirecting...",
+        duration: 2000,
       });
-
-      if (response.ok) {
-        showToast({
-          type: "success",
-          title: "Logged Out",
-          message: "You have been successfully logged out. Redirecting...",
-          duration: 2000,
-        });
-
-        // Small delay to show the toast before redirect
-        setTimeout(() => {
-          router.push("/login");
-          router.refresh();
-        }, 1500);
-      } else {
-        showToast({
-          type: "error",
-          title: "Logout Error",
-          message: "Failed to logout properly. Redirecting anyway...",
-        });
-
-        // Still redirect even if logout API fails
-        setTimeout(() => {
-          router.push("/login");
-          router.refresh();
-        }, 2000);
-      }
     } catch (error) {
       console.error("Logout error:", error);
       showToast({
@@ -69,16 +45,36 @@ export default function OrganizationAdminDashboard() {
         title: "Connection Error",
         message: "Failed to logout properly. Redirecting anyway...",
       });
-
-      // Force redirect even if logout API fails
-      setTimeout(() => {
-        router.push("/login");
-        router.refresh();
-      }, 2000);
-    } finally {
-      setIsLoggingOut(false);
     }
   };
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex items-center gap-2">
+          <Loader2 className="h-6 w-6 animate-spin text-brand-primary" />
+          <span className="text-muted-foreground">
+            Verifying authentication...
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error || !isAuthenticated || !user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-destructive mb-4">
+            {error || "Authentication failed"}
+          </p>
+          <p className="text-muted-foreground">Redirecting to login...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -99,7 +95,7 @@ export default function OrganizationAdminDashboard() {
                 Organization Admin
               </span>
               <span className="text-xs text-muted-foreground">
-                • Ministry of IT
+                • {user.userid} ({user.orgId})
               </span>
             </div>
           </div>
@@ -111,11 +107,10 @@ export default function OrganizationAdminDashboard() {
             <Button
               variant="outline"
               onClick={handleLogout}
-              disabled={isLoggingOut}
               className="flex items-center gap-2"
             >
               <LogOut className="h-4 w-4" />
-              {isLoggingOut ? "Signing out..." : "Logout"}
+              Logout
             </Button>
           </div>
         </div>
@@ -334,6 +329,33 @@ export default function OrganizationAdminDashboard() {
                     Monthly bill of Nu. 25,400 paid successfully • 1 day ago
                   </p>
                 </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Access Control Notice for Organization Admin */}
+        <Card className="mt-8 border-brand-secondary/20 bg-gradient-to-r from-brand-secondary/5 to-brand-primary/5">
+          <CardContent className="py-8">
+            <div className="text-center space-y-4">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-brand-secondary/10">
+                <Building2 className="h-8 w-8 text-brand-secondary" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-brand-primary">
+                  Organization Administrator Access
+                </h3>
+                <p className="text-muted-foreground">
+                  You have administrative access to {user.orgId} organization
+                  data and users
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2 justify-center">
+                <Button className="bg-brand-primary hover:bg-brand-primary/90">
+                  Manage Users
+                </Button>
+                <Button variant="outline">View Reports</Button>
+                <Button variant="outline">Billing History</Button>
               </div>
             </div>
           </CardContent>
