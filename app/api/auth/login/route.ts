@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { AuthService } from "@/lib/auth";
 import { validateCredentials } from "@/lib/validation";
 
-const loginAttempts = new Map<string, { count: number; lastAttempt: number }>();
-
 // Helper function to get client IP
 function getClientIP(request: NextRequest): string {
   const forwarded = request.headers.get("x-forwarded-for");
@@ -41,42 +39,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Rate limiting check
-    const now = Date.now();
-    const attempts = loginAttempts.get(clientIP);
-
-    if (
-      attempts &&
-      attempts.count >= 5 &&
-      now - attempts.lastAttempt < 15 * 60 * 1000
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Too many login attempts. Please try again later.",
-        },
-        { status: 429 }
-      );
-    }
-
-    const result = await AuthService.authenticateUser(userid, password);
+    // Use improved AuthService with client identifier for rate limiting
+    const result = await AuthService.authenticateUser(
+      userid,
+      password,
+      clientIP
+    );
 
     if (!result.success) {
-      // Track failed attempts
-      const currentAttempts = attempts || { count: 0, lastAttempt: 0 };
-      loginAttempts.set(clientIP, {
-        count: currentAttempts.count + 1,
-        lastAttempt: now,
-      });
-
       return NextResponse.json(
         { success: false, message: result.message },
-        { status: 401 }
+        { status: result.message.includes("Too many") ? 429 : 401 }
       );
     }
-
-    // Clear attempts on successful login
-    loginAttempts.delete(clientIP);
 
     const response = NextResponse.json({
       success: true,
@@ -100,4 +75,9 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+// Handle preflight requests
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 200 });
 }

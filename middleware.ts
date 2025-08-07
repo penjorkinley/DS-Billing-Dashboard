@@ -4,8 +4,6 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get("token")?.value;
   const { pathname } = request.nextUrl;
 
-  console.log("Middleware - Path:", pathname, "Token exists:", !!token);
-
   // Define public routes that don't need authentication
   const publicRoutes = ["/login", "/api/auth/login", "/api/auth/logout"];
   const isPublicRoute = publicRoutes.some((route) =>
@@ -14,18 +12,16 @@ export function middleware(request: NextRequest) {
 
   // Allow access to public routes
   if (isPublicRoute) {
-    console.log("Public route, allowing access");
     return NextResponse.next();
   }
 
   // If no token exists, redirect to login
   if (!token) {
-    console.log("No token, redirecting to login");
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // If token exists, allow access to role-specific dashboards
-  console.log("Token exists, allowing access to:", pathname);
+  // Token exists - let the page/API route handle verification
+  // This avoids crypto issues in Edge Runtime
   return NextResponse.next();
 }
 

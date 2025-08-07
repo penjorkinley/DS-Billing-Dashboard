@@ -1,7 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,30 +18,41 @@ import {
   Server,
   Database,
   Settings,
+  Loader2,
 } from "lucide-react";
 
 export default function SuperAdminDashboard() {
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const router = useRouter();
+  const { user, loading, error, logout, isAuthenticated } = useAuth({
+    requiredRole: "SUPER_ADMIN",
+  });
 
-  const handleLogout = async () => {
-    setIsLoggingOut(true);
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex items-center gap-2">
+          <Loader2 className="h-6 w-6 animate-spin text-brand-primary" />
+          <span className="text-muted-foreground">
+            Verifying authentication...
+          </span>
+        </div>
+      </div>
+    );
+  }
 
-    try {
-      const response = await fetch("/api/auth/logout", {
-        method: "POST",
-      });
-
-      if (response.ok) {
-        router.push("/login");
-        router.refresh();
-      }
-    } catch (error) {
-      console.error("Logout error:", error);
-    } finally {
-      setIsLoggingOut(false);
-    }
-  };
+  // Show error state
+  if (error || !isAuthenticated || !user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-destructive mb-4">
+            {error || "Authentication failed"}
+          </p>
+          <p className="text-muted-foreground">Redirecting to login...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -62,17 +72,19 @@ export default function SuperAdminDashboard() {
               <span className="text-sm font-medium text-brand-primary">
                 Super Administrator
               </span>
+              <span className="text-xs text-muted-foreground">
+                • {user.userid}
+              </span>
             </div>
           </div>
 
           <Button
             variant="outline"
-            onClick={handleLogout}
-            disabled={isLoggingOut}
+            onClick={logout}
             className="flex items-center gap-2"
           >
             <LogOut className="h-4 w-4" />
-            {isLoggingOut ? "Signing out..." : "Logout"}
+            Logout
           </Button>
         </div>
       </header>
