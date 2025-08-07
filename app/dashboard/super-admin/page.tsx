@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/lib/toast-context";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,9 +23,56 @@ import {
 } from "lucide-react";
 
 export default function SuperAdminDashboard() {
-  const { user, loading, error, logout, isAuthenticated } = useAuth({
+  const { user, loading, error, isAuthenticated } = useAuth({
     requiredRole: "SUPER_ADMIN",
   });
+  const { showToast } = useToast();
+
+  // Enhanced logout function with toast feedback
+  const handleLogout = async () => {
+    try {
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+      });
+
+      if (response.ok) {
+        showToast({
+          type: "success",
+          title: "Logged Out",
+          message: "You have been successfully logged out. Redirecting...",
+          duration: 2000,
+        });
+
+        // Small delay to show the toast before redirect
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 1500);
+      } else {
+        showToast({
+          type: "error",
+          title: "Logout Error",
+          message: "Failed to logout properly. Redirecting anyway...",
+        });
+
+        // Still redirect even if logout API fails
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 2000);
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+      showToast({
+        type: "error",
+        title: "Connection Error",
+        message: "Failed to logout properly. Redirecting anyway...",
+      });
+
+      // Force redirect even if logout API fails
+      setTimeout(() => {
+        window.location.href = "/login";
+      }, 2000);
+    }
+  };
 
   // Show loading state
   if (loading) {
@@ -80,7 +128,7 @@ export default function SuperAdminDashboard() {
 
           <Button
             variant="outline"
-            onClick={logout}
+            onClick={handleLogout}
             className="flex items-center gap-2"
           >
             <LogOut className="h-4 w-4" />

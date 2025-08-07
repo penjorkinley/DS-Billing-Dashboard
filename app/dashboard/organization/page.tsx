@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/lib/toast-context";
 import {
   Card,
   CardContent,
@@ -25,6 +26,7 @@ import {
 export default function OrganizationAdminDashboard() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const router = useRouter();
+  const { showToast } = useToast();
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -35,11 +37,44 @@ export default function OrganizationAdminDashboard() {
       });
 
       if (response.ok) {
-        router.push("/login");
-        router.refresh();
+        showToast({
+          type: "success",
+          title: "Logged Out",
+          message: "You have been successfully logged out. Redirecting...",
+          duration: 2000,
+        });
+
+        // Small delay to show the toast before redirect
+        setTimeout(() => {
+          router.push("/login");
+          router.refresh();
+        }, 1500);
+      } else {
+        showToast({
+          type: "error",
+          title: "Logout Error",
+          message: "Failed to logout properly. Redirecting anyway...",
+        });
+
+        // Still redirect even if logout API fails
+        setTimeout(() => {
+          router.push("/login");
+          router.refresh();
+        }, 2000);
       }
     } catch (error) {
       console.error("Logout error:", error);
+      showToast({
+        type: "error",
+        title: "Connection Error",
+        message: "Failed to logout properly. Redirecting anyway...",
+      });
+
+      // Force redirect even if logout API fails
+      setTimeout(() => {
+        router.push("/login");
+        router.refresh();
+      }, 2000);
     } finally {
       setIsLoggingOut(false);
     }

@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useToast } from "@/lib/toast-context";
 import logo from "@/public/ndi-logo.svg";
 import {
   Card,
@@ -14,7 +15,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 export default function LoginPage() {
@@ -24,20 +24,17 @@ export default function LoginPage() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
   const router = useRouter();
+  const { showToast } = useToast();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear error when user starts typing
-    if (error) setError("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError("");
 
     try {
       const response = await fetch("/api/auth/login", {
@@ -54,6 +51,14 @@ export default function LoginPage() {
       if (result.success) {
         console.log("Login successful, user role:", result.user?.role);
 
+        // Show success toast
+        showToast({
+          type: "success",
+          title: "Login Successful",
+          message: "Welcome back! Redirecting to your dashboard...",
+          duration: 2000,
+        });
+
         // Role-based redirection - direct to specific dashboards only
         let redirectPath: string;
 
@@ -67,23 +72,36 @@ export default function LoginPage() {
           default:
             // If no specific role, redirect to login (shouldn't happen)
             redirectPath = "/login";
-            setError("Invalid user role. Please contact administrator.");
+            showToast({
+              type: "error",
+              title: "Access Error",
+              message: "Invalid user role. Please contact administrator.",
+            });
             setIsLoading(false);
             return;
         }
 
         console.log("Redirecting to:", redirectPath);
 
-        // Give a small delay to ensure cookie is set, then redirect
+        // Give a small delay to ensure cookie is set and user can see success message
         setTimeout(() => {
           window.location.href = redirectPath;
-        }, 100);
+        }, 1500);
       } else {
-        setError(result.message || "Login failed. Please try again.");
+        // Show error toast
+        showToast({
+          type: "error",
+          title: "Login Failed",
+          message: result.message || "Invalid credentials. Please try again.",
+        });
       }
     } catch (err) {
       console.error("Login error:", err);
-      setError("An unexpected error occurred. Please try again.");
+      showToast({
+        type: "error",
+        title: "Connection Error",
+        message: "An unexpected error occurred. Please try again.",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -101,12 +119,12 @@ export default function LoginPage() {
       {/* Main Content Area - Two Columns on large screens, single column on mobile */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
         {/* Login Form Section */}
-        <div className="w-full lg:w-[45%] flex items-center justify-center px-4 sm:px-8 py-4 lg:py-8">
+        <div className="w-full lg:w-[45%] flex items-center justify-center px-4 sm:px-8 py-4 lg:py-8 ">
           <div
             className="w-full max-w-sm lg:max-w-sm animate-fade-in"
             style={{ animationDuration: ".8s" }}
           >
-            <Card className="border-none shadow-none">
+            <Card className="border-none shadow-none sm:-mt-12">
               <CardHeader className="space-y-2 lg:space-y-3 text-center px-0">
                 <CardTitle className="text-3xl sm:text-4xl lg:text-4xl font-bold text-brand-primary">
                   Kuzuzangpo!
@@ -124,13 +142,6 @@ export default function LoginPage() {
                   onSubmit={handleSubmit}
                   className="space-y-3 sm:space-y-4"
                 >
-                  {/* Error Alert */}
-                  {error && (
-                    <Alert variant="destructive">
-                      <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                  )}
-
                   {/* Client ID Field */}
                   <div className="space-y-2">
                     <Label
