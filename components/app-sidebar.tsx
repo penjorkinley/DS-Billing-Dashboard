@@ -14,6 +14,7 @@ import {
   Server,
   UserPlus,
   Bell,
+  LogOut,
 } from "lucide-react";
 
 import {
@@ -36,6 +37,18 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 
 // Super Admin Navigation Items
 const superAdminNavItems = [
@@ -224,11 +237,13 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
     role: string;
     orgId: string | null;
   };
+  onLogout?: () => void;
 }
 
 export function AppSidebar({
   userRole = "ORGANIZATION_ADMIN",
   user,
+  onLogout,
   ...props
 }: AppSidebarProps) {
   const navItems =
@@ -256,18 +271,24 @@ export function AppSidebar({
 
   const config = roleConfig[userRole];
 
+  const handleLogout = () => {
+    if (onLogout) {
+      onLogout();
+    }
+  };
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <div className="flex items-center gap-3 px-4 py-3">
-          <div
-            className={`flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground`}
-          >
-            <config.icon className="h-4 w-4" />
+        <div className="flex items-center gap-3 px-4 py-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <config.icon className="h-6 w-6" />
           </div>
-          <div className="grid flex-1 text-left text-sm leading-tight">
-            <span className="truncate font-semibold">{config.title}</span>
-            <span className="truncate text-xs text-muted-foreground">
+          <div className="grid flex-1 text-left text-base leading-tight">
+            <span className="truncate font-semibold text-lg">
+              {config.title}
+            </span>
+            <span className="truncate text-sm text-muted-foreground">
               {config.subtitle}
             </span>
           </div>
@@ -275,10 +296,12 @@ export function AppSidebar({
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+        <SidebarGroup className="py-4">
+          <SidebarGroupLabel className="px-4 mb-2 text-xs font-semibold uppercase tracking-wider">
+            Navigation
+          </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="space-y-1 px-2">
               {navItems.map((item) => (
                 <Collapsible
                   key={item.title}
@@ -289,24 +312,36 @@ export function AppSidebar({
                   <SidebarMenuItem>
                     <CollapsibleTrigger asChild>
                       <SidebarMenuButton
-                        tooltip={item.title}
-                        className="w-full"
+                        tooltip={{
+                          children: item.title,
+                          className:
+                            "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 shadow-lg rounded-md px-3 py-2 text-sm font-medium opacity-100 [&>*]:hidden",
+                        }}
+                        className="w-full h-11 gap-3 px-3 rounded-md"
                         asChild={!item.items}
                       >
                         {!item.items && item.url ? (
                           <a
                             href={item.url}
-                            className="flex w-full items-center"
+                            className="flex w-full items-center gap-3"
                           >
-                            {item.icon && <item.icon />}
-                            <span>{item.title}</span>
+                            {item.icon && (
+                              <item.icon className="h-5 w-5 shrink-0" />
+                            )}
+                            <span className="flex-1 text-base font-medium">
+                              {item.title}
+                            </span>
                           </a>
                         ) : (
-                          <div className="flex w-full items-center">
-                            {item.icon && <item.icon />}
-                            <span>{item.title}</span>
+                          <div className="flex w-full items-center gap-3">
+                            {item.icon && (
+                              <item.icon className="h-5 w-5 shrink-0" />
+                            )}
+                            <span className="flex-1 text-base font-medium">
+                              {item.title}
+                            </span>
                             {item.items && (
-                              <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                              <ChevronRight className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                             )}
                           </div>
                         )}
@@ -314,10 +349,13 @@ export function AppSidebar({
                     </CollapsibleTrigger>
                     {item.items && (
                       <CollapsibleContent>
-                        <SidebarMenuSub>
+                        <SidebarMenuSub className="ml-6 mt-1 space-y-1 border-l border-border pl-4">
                           {item.items.map((subItem) => (
                             <SidebarMenuSubItem key={subItem.title}>
-                              <SidebarMenuSubButton asChild>
+                              <SidebarMenuSubButton
+                                asChild
+                                className="h-9 text-base"
+                              >
                                 <a href={subItem.url}>
                                   <span>{subItem.title}</span>
                                 </a>
@@ -335,22 +373,47 @@ export function AppSidebar({
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter>
+      <SidebarFooter className="px-3 py-6">
         <SidebarMenu>
+          {/* Logout Button with Alert Dialog */}
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
-              <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
-                  <Shield className="h-4 w-4" />
-                </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">BNDIL Admin</span>
-                  <span className="truncate text-xs text-muted-foreground">
-                    Bhutan NDI
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <SidebarMenuButton
+                  tooltip={{
+                    children: "Logout",
+                    className:
+                      "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 shadow-lg rounded-md px-3 py-2 text-sm font-medium opacity-100 [&>*]:hidden",
+                  }}
+                  className="h-11 gap-3 px-3 rounded-md text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  <LogOut className="h-5 w-5 shrink-0" />
+                  <span className="font-medium text-base cursor-pointer">
+                    Logout
                   </span>
-                </div>
-              </div>
-            </SidebarMenuButton>
+                </SidebarMenuButton>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="sm:max-w-md">
+                <AlertDialogHeader className="text-left">
+                  <AlertDialogTitle className="text-lg font-semibold">
+                    Confirm Logout
+                  </AlertDialogTitle>
+                  <AlertDialogDescription className="text-sm leading-relaxed">
+                    Are you sure you want to logout? You will be signed out of
+                    your account and redirected to the login page.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter className="gap-2 sm:gap-2">
+                  <AlertDialogCancel className="mt-0">Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleLogout}
+                    className="bg-red-500 hover:bg-red-600 text-white font-medium"
+                  >
+                    Logout
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

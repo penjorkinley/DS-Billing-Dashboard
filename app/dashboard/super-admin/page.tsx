@@ -99,11 +99,15 @@ export default function SuperAdminDashboard() {
         } as React.CSSProperties
       }
     >
-      <AppSidebar userRole="SUPER_ADMIN" user={user} variant="inset" />
+      <AppSidebar
+        userRole="SUPER_ADMIN"
+        user={user}
+        onLogout={handleLogout}
+        variant="inset"
+      />
       <SidebarInset>
         <SiteHeader
           user={user}
-          onLogout={handleLogout}
           breadcrumbItems={[
             { title: "Super Administrator", href: "/dashboard/super-admin" },
             { title: "System Dashboard" },

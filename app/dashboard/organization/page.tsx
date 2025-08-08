@@ -111,11 +111,15 @@ export default function OrganizationAdminDashboard() {
         } as React.CSSProperties
       }
     >
-      <AppSidebar userRole="ORGANIZATION_ADMIN" user={user} variant="inset" />
+      <AppSidebar
+        userRole="ORGANIZATION_ADMIN"
+        user={user}
+        onLogout={handleLogout}
+        variant="inset"
+      />
       <SidebarInset>
         <SiteHeader
           user={user}
-          onLogout={handleLogout}
           breadcrumbItems={[
             { title: "Organization Admin", href: "/dashboard/organization" },
             { title: `${getOrgDisplayName(user.orgId)} Dashboard` },
