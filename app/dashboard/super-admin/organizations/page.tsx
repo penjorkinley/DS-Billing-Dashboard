@@ -28,107 +28,104 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   Search,
-  MoreHorizontal,
   Building2,
   TrendingUp,
   Calendar,
   Grid3X3,
   List,
-  Plus,
-  Eye,
   Edit,
   Loader2,
 } from "lucide-react";
 
+// Import the properly structured components
+import { EditOrganizationDialog } from "@/components/organization/edit-organization-dialog";
+import {
+  type Organization,
+  type EditOrganizationData,
+} from "@/lib/schemas/organization";
+
 // Sample organization data - in real app, this would come from an API
-const organizationsData = [
+const organizationsData: Organization[] = [
   {
     id: "ORG001",
     name: "Ministry of Information Technology",
     shortName: "MIT",
-    status: "active" as const,
+    status: "active",
     revenue: 25400,
     createdAt: "2023-03-15",
     contactEmail: "admin@mit.gov.bt",
-    subscription: "postpaid" as const,
+    subscription: "postpaid",
   },
   {
     id: "ORG002",
     name: "Department of Revenue & Customs",
     shortName: "DRC",
-    status: "active" as const,
+    status: "active",
     revenue: 18200,
     createdAt: "2023-05-22",
     contactEmail: "admin@drc.gov.bt",
-    subscription: "prepaid" as const,
+    subscription: "prepaid",
   },
   {
     id: "ORG003",
     name: "Digital Bhutan Corporation",
     shortName: "DBC",
-    status: "active" as const,
+    status: "active",
     revenue: 35600,
     createdAt: "2023-01-10",
     contactEmail: "support@digitalBhutan.bt",
-    subscription: "postpaid" as const,
+    subscription: "postpaid",
   },
   {
     id: "ORG004",
     name: "Ministry of Health",
     shortName: "MOH",
-    status: "inactive" as const,
+    status: "inactive",
     revenue: 12800,
     createdAt: "2023-07-08",
     contactEmail: "admin@health.gov.bt",
-    subscription: "prepaid" as const,
+    subscription: "prepaid",
   },
   {
     id: "ORG005",
     name: "Department of Education",
     shortName: "DOE",
-    status: "active" as const,
+    status: "active",
     revenue: 22900,
     createdAt: "2023-04-12",
     contactEmail: "admin@education.gov.bt",
-    subscription: "postpaid" as const,
+    subscription: "postpaid",
   },
   {
     id: "ORG006",
     name: "Royal Insurance Corporation",
     shortName: "RIC",
-    status: "active" as const,
+    status: "active",
     revenue: 19500,
     createdAt: "2023-06-18",
     contactEmail: "tech@ric.bt",
-    subscription: "prepaid" as const,
+    subscription: "prepaid",
   },
   {
     id: "ORG007",
     name: "Bhutan Power Corporation",
     shortName: "BPC",
-    status: "active" as const,
+    status: "active",
     revenue: 28900,
     createdAt: "2023-02-28",
     contactEmail: "digital@bpc.bt",
-    subscription: "postpaid" as const,
+    subscription: "postpaid",
   },
   {
     id: "ORG008",
     name: "National Statistics Bureau",
     shortName: "NSB",
-    status: "inactive" as const,
+    status: "inactive",
     revenue: 8900,
     createdAt: "2023-09-05",
     contactEmail: "it@nsb.gov.bt",
-    subscription: "prepaid" as const,
+    subscription: "prepaid",
   },
 ];
 
@@ -139,13 +136,14 @@ export default function AllOrganizationsPage() {
     requiredRole: "SUPER_ADMIN",
   });
   const router = useRouter();
-
   const { showToast } = useToast();
 
   // State management
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [organizations, setOrganizations] =
+    useState<Organization[]>(organizationsData);
 
   // Handle logout
   const handleLogout = async () => {
@@ -187,9 +185,36 @@ export default function AllOrganizationsPage() {
     }
   };
 
+  // Handle organization update
+  const handleOrganizationUpdate = (
+    orgId: string,
+    updatedData: EditOrganizationData
+  ) => {
+    setOrganizations((prev) =>
+      prev.map((org) =>
+        org.id === orgId
+          ? {
+              ...org,
+              name: updatedData.name,
+              status: updatedData.status,
+              contactEmail: updatedData.contactEmail,
+              subscription: updatedData.subscription,
+            }
+          : org
+      )
+    );
+
+    showToast({
+      type: "success",
+      title: "Organization Updated",
+      message: `${updatedData.name} has been successfully updated.`,
+      duration: 3000,
+    });
+  };
+
   // Filter and search logic
   const filteredOrganizations = useMemo(() => {
-    return organizationsData.filter((org) => {
+    return organizations.filter((org) => {
       const matchesSearch =
         org.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         org.shortName.toLowerCase().includes(searchQuery.toLowerCase());
@@ -199,39 +224,22 @@ export default function AllOrganizationsPage() {
 
       return matchesSearch && matchesStatus;
     });
-  }, [searchQuery, statusFilter]);
+  }, [organizations, searchQuery, statusFilter]);
 
   // Stats calculation
   const stats = useMemo(() => {
-    const total = organizationsData.length;
-    const active = organizationsData.filter(
+    const total = organizations.length;
+    const active = organizations.filter(
       (org) => org.status === "active"
     ).length;
     const inactive = total - active;
-    const totalRevenue = organizationsData.reduce(
+    const totalRevenue = organizations.reduce(
       (sum, org) => sum + org.revenue,
       0
     );
 
     return { total, active, inactive, totalRevenue };
-  }, []);
-
-  // Handle organization actions
-  const handleViewDetails = (orgId: string) => {
-    showToast({
-      type: "info",
-      title: "View Details",
-      message: `Viewing details for ${orgId}`,
-    });
-  };
-
-  const handleEditOrganization = (orgId: string) => {
-    showToast({
-      type: "info",
-      title: "Edit Organization",
-      message: `Editing ${orgId}`,
-    });
-  };
+  }, [organizations]);
 
   // Loading state
   if (loading) {
@@ -434,7 +442,7 @@ export default function AllOrganizationsPage() {
                   <div className="flex items-center justify-between text-sm text-muted-foreground">
                     <span>
                       Showing {filteredOrganizations.length} of{" "}
-                      {organizationsData.length} organizations
+                      {organizations.length} organizations
                     </span>
                     {(searchQuery || statusFilter !== "all") && (
                       <Button
@@ -473,37 +481,17 @@ export default function AllOrganizationsPage() {
                               {org.shortName}
                             </p>
                           </div>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                              >
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent
-                              align="end"
-                              className="shadow-lg border-0"
-                              style={{ backgroundColor: "#FAFAFA" }}
+                          <EditOrganizationDialog
+                            organization={org}
+                            onSave={handleOrganizationUpdate}
+                          >
+                            <Button
+                              variant="ghost"
+                              className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-accent"
                             >
-                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuItem
-                                onClick={() => handleViewDetails(org.id)}
-                                className="cursor-pointer"
-                              >
-                                <Eye className="mr-2 h-4 w-4" />
-                                View Details
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleEditOrganization(org.id)}
-                                className="cursor-pointer"
-                              >
-                                <Edit className="mr-2 h-4 w-4" />
-                                Edit Organization
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </EditOrganizationDialog>
                         </div>
                       </CardHeader>
                       <CardContent>
@@ -625,39 +613,17 @@ export default function AllOrganizationsPage() {
                               )}
                             </TableCell>
                             <TableCell className="text-right">
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    className="h-8 w-8 p-0"
-                                  >
-                                    <MoreHorizontal className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent
-                                  align="end"
-                                  className="shadow-lg border-0"
-                                  style={{ backgroundColor: "#FAFAFA" }}
+                              <EditOrganizationDialog
+                                organization={org}
+                                onSave={handleOrganizationUpdate}
+                              >
+                                <Button
+                                  variant="ghost"
+                                  className="h-8 w-8 p-0 hover:bg-accent"
                                 >
-                                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                  <DropdownMenuItem
-                                    onClick={() => handleViewDetails(org.id)}
-                                    className="cursor-pointer"
-                                  >
-                                    <Eye className="mr-2 h-4 w-4" />
-                                    View Details
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() =>
-                                      handleEditOrganization(org.id)
-                                    }
-                                    className="cursor-pointer"
-                                  >
-                                    <Edit className="mr-2 h-4 w-4" />
-                                    Edit Organization
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              </EditOrganizationDialog>
                             </TableCell>
                           </TableRow>
                         ))}

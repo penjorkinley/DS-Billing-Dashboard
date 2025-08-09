@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-// Organization creation schema
-export const createOrganizationSchema = z.object({
+// Base organization validation fields
+const baseOrganizationFields = {
   name: z
     .string()
     .min(2, "Organization name must be at least 2 characters")
@@ -25,6 +25,20 @@ export const createOrganizationSchema = z.object({
   status: z.enum(["active", "inactive"], {
     error: "Please select a status",
   }),
+  contactEmail: z
+    .string()
+    .email("Please enter a valid email address")
+    .min(5, "Email must be at least 5 characters")
+    .max(100, "Email must not exceed 100 characters")
+    .trim(),
+  subscription: z.enum(["prepaid", "postpaid"], {
+    error: "Please select a subscription type",
+  }),
+};
+
+// Organization creation schema
+export const createOrganizationSchema = z.object({
+  ...baseOrganizationFields,
   createdBy: z
     .string()
     .min(2, "Created by field must be at least 2 characters")
@@ -32,8 +46,13 @@ export const createOrganizationSchema = z.object({
     .trim(),
 });
 
-// Organization update schema (for future use)
-export const updateOrganizationSchema = createOrganizationSchema
+// Organization edit schema (excludes createdBy, includes all editable fields)
+export const editOrganizationSchema = z.object({
+  ...baseOrganizationFields,
+});
+
+// Organization update schema (for future use - partial updates)
+export const updateOrganizationSchema = editOrganizationSchema
   .partial()
   .extend({
     updatedBy: z
@@ -55,8 +74,21 @@ export const organizationSchema = createOrganizationSchema.extend({
 
 // Type exports
 export type CreateOrganizationData = z.infer<typeof createOrganizationSchema>;
+export type EditOrganizationData = z.infer<typeof editOrganizationSchema>;
 export type UpdateOrganizationData = z.infer<typeof updateOrganizationSchema>;
 export type OrganizationData = z.infer<typeof organizationSchema>;
+
+// Organization interface for frontend (matches your existing data structure)
+export interface Organization {
+  id: string;
+  name: string;
+  shortName: string;
+  status: "active" | "inactive";
+  revenue: number;
+  createdAt: string;
+  contactEmail: string;
+  subscription: "prepaid" | "postpaid";
+}
 
 // Form errors type
 export interface FormErrors {
@@ -83,12 +115,24 @@ export const generateWebhookIdFromName = (name: string): string => {
     .substring(0, 30);
 };
 
-// Default form values
+// Default form values for creation
 export const defaultCreateOrganizationValues: Partial<CreateOrganizationData> =
   {
     name: "",
     webhookId: "",
     webhookUrl: "",
     status: "active",
+    contactEmail: "",
+    subscription: "prepaid",
     createdBy: "",
   };
+
+// Default form values for editing (will be populated from organization data)
+export const defaultEditOrganizationValues: Partial<EditOrganizationData> = {
+  name: "",
+  webhookId: "",
+  webhookUrl: "",
+  status: "active",
+  contactEmail: "",
+  subscription: "prepaid",
+};

@@ -106,14 +106,6 @@ export default function CreateOrganizationPage() {
     }
   };
 
-  // Generate webhook ID suggestion based on organization name
-  const generateWebhookId = () => {
-    if (formData.name) {
-      const suggestion = generateWebhookIdFromName(formData.name);
-      handleInputChange("webhookId", suggestion);
-    }
-  };
-
   // Validate form
   const validateForm = (): boolean => {
     try {
@@ -308,14 +300,6 @@ export default function CreateOrganizationPage() {
                           >
                             Webhook ID *
                           </Label>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={generateWebhookId}
-                            disabled={!formData.name}
-                            className="text-xs h-6 px-2 text-primary hover:text-primary/80"
-                          ></Button>
                         </div>
                         <Input
                           id="webhookId"
