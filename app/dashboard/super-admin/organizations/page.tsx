@@ -536,7 +536,7 @@ export default function AllOrganizationsPage() {
                             </div>
                           </div>
 
-                          <div className="pt-2 border-t border-gray-100">
+                          <div className="pt-2 border-t border-gray-200">
                             <div className="flex items-center gap-2 text-xs text-muted-foreground">
                               <Calendar className="h-3 w-3" />
                               Created:{" "}

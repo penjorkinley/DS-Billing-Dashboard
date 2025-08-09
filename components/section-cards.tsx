@@ -162,7 +162,7 @@ export function SectionCards({
     <div className="px-4 lg:px-6">
       {/* Section Header */}
       <div className="mb-6">
-        <h2 className="text-2xl font-bold tracking-tight">
+        <h2 className="text-3xl font-bold tracking-tight mb-2">
           {userRole === "SUPER_ADMIN"
             ? "System Overview"
             : "Organization Overview"}
