@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/lib/toast-context";
 import { AppSidebar } from "@/components/app-sidebar";
@@ -137,6 +138,8 @@ export default function AllOrganizationsPage() {
   const { user, loading, error, isAuthenticated } = useAuth({
     requiredRole: "SUPER_ADMIN",
   });
+  const router = useRouter();
+
   const { showToast } = useToast();
 
   // State management
@@ -299,8 +302,10 @@ export default function AllOrganizationsPage() {
                     Manage and monitor all organizations in your system
                   </p>
                 </div>
-                <Button className="w-fit">
-                  <Plus className="mr-2 h-4 w-4" />
+                <Button
+                  className="w-fit bg-green-600 hover:bg-green-700 text-white border-0"
+                  onClick={() => router.push("/dashboard/super-admin/create")}
+                >
                   Add Organization
                 </Button>
               </div>

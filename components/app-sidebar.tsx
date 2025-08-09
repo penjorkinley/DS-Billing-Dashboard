@@ -67,11 +67,7 @@ const superAdminNavItems = [
       },
       {
         title: "Create Organization",
-        url: "/dashboard/super-admin/organizations/create",
-      },
-      {
-        title: "Organization Reports",
-        url: "/dashboard/super-admin/organizations/reports",
+        url: "/dashboard/super-admin/create",
       },
     ],
   },
