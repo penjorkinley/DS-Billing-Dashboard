@@ -83,10 +83,6 @@ const superAdminNavItems = [
         title: "Create User",
         url: "/dashboard/super-admin/users/create",
       },
-      {
-        title: "User Roles",
-        url: "/dashboard/super-admin/users/roles",
-      },
     ],
   },
   {
