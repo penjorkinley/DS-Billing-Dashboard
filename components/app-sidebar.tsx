@@ -122,46 +122,6 @@ const orgAdminNavItems = [
     url: "/dashboard/organization",
   },
   {
-    title: "Users",
-    icon: Users,
-    items: [
-      {
-        title: "All Users",
-        url: "/dashboard/organization/users",
-      },
-      {
-        title: "Add User",
-        url: "/dashboard/organization/users/add",
-      },
-      {
-        title: "User Roles",
-        url: "/dashboard/organization/users/roles",
-      },
-      {
-        title: "Access Control",
-        url: "/dashboard/organization/users/access",
-      },
-    ],
-  },
-  {
-    title: "Services",
-    icon: FileText,
-    items: [
-      {
-        title: "Active Services",
-        url: "/dashboard/organization/services",
-      },
-      {
-        title: "Service Usage",
-        url: "/dashboard/organization/services/usage",
-      },
-      {
-        title: "Service Configuration",
-        url: "/dashboard/organization/services/config",
-      },
-    ],
-  },
-  {
     title: "Billing",
     icon: CreditCard,
     items: [
@@ -177,34 +137,21 @@ const orgAdminNavItems = [
         title: "Usage Reports",
         url: "/dashboard/organization/billing/reports",
       },
-      {
-        title: "Payment Methods",
-        url: "/dashboard/organization/billing/methods",
-      },
     ],
   },
   {
-    title: "Analytics",
-    icon: BarChart3,
+    title: "Services",
+    icon: FileText,
     items: [
       {
-        title: "Usage Dashboard",
-        url: "/dashboard/organization/analytics",
+        title: "Active Services",
+        url: "/dashboard/organization/services",
       },
       {
-        title: "Performance",
-        url: "/dashboard/organization/analytics/performance",
-      },
-      {
-        title: "Reports",
-        url: "/dashboard/organization/analytics/reports",
+        title: "Service Usage",
+        url: "/dashboard/organization/services/usage",
       },
     ],
-  },
-  {
-    title: "Settings",
-    icon: Settings,
-    url: "/dashboard/organization/settings",
   },
 ];
 

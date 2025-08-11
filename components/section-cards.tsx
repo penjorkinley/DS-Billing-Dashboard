@@ -12,8 +12,10 @@ import {
   BarChart3,
   DollarSign,
   Activity,
+  Calendar,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { SubscriptionData } from "@/components/subscription/subscription-overview";
 
 interface MetricCardProps {
   title: string;
@@ -64,11 +66,33 @@ function MetricCard({
 
 interface SectionCardsProps {
   userRole?: "SUPER_ADMIN" | "ORGANIZATION_ADMIN";
+  subscriptionData?: SubscriptionData;
 }
 
 export function SectionCards({
   userRole = "ORGANIZATION_ADMIN",
+  subscriptionData,
 }: SectionCardsProps) {
+  // Helper functions
+  const formatCurrency = (amount: number) => `Nu. ${amount.toLocaleString()}`;
+
+  const getBillingCycleLabel = (cycle: string) => {
+    const labels = {
+      monthly: "Monthly",
+      quarterly: "Quarterly",
+      half_yearly: "Half Yearly",
+      yearly: "Yearly",
+    };
+    return labels[cycle as keyof typeof labels] || cycle;
+  };
+
+  const getTotalUsageCost = (data: SubscriptionData) => {
+    return (
+      data.singleSignaturesUsed * data.currentRates.singleSignaturePrice +
+      data.multipleSignaturesUsed * data.currentRates.multipleSignaturePrice
+    );
+  };
+
   const superAdminMetrics = [
     {
       title: "Total Users",
@@ -108,42 +132,137 @@ export function SectionCards({
     },
   ];
 
-  const orgAdminMetrics = [
-    {
-      title: "Active Users",
-      value: "145",
-      description: "In your organization",
-      icon: Users,
-      trend: { value: 5.2, label: "from last week", direction: "up" as const },
-    },
-    {
-      title: "Monthly Usage",
-      value: "Nu. 25,400",
-      description: "Current billing cycle",
-      icon: BarChart3,
-      trend: {
-        value: 10.1,
-        label: "from last month",
-        direction: "up" as const,
+  // Function to get organization admin metrics
+  const getOrgAdminMetrics = () => {
+    if (!subscriptionData) {
+      // Fallback metrics when subscription data is not available
+      return [
+        {
+          title: "Active Users",
+          value: "145",
+          description: "In your organization",
+          icon: Users,
+          trend: {
+            value: 5.2,
+            label: "from last week",
+            direction: "up" as const,
+          },
+        },
+        {
+          title: "Monthly Usage",
+          value: "Nu. 25,400",
+          description: "Current billing cycle",
+          icon: BarChart3,
+          trend: {
+            value: 10.1,
+            label: "from last month",
+            direction: "up" as const,
+          },
+        },
+        {
+          title: "Active Services",
+          value: "12",
+          description: "Digital services running",
+          icon: FileText,
+          trend: {
+            value: 2,
+            label: "new this month",
+            direction: "up" as const,
+          },
+        },
+        {
+          title: "Service Health",
+          value: "99.2%",
+          description: "Uptime this month",
+          icon: Activity,
+          trend: {
+            value: 0.3,
+            label: "from last month",
+            direction: "up" as const,
+          },
+        },
+      ];
+    }
+
+    // Metrics with actual subscription data
+    return [
+      {
+        title: "Subscription Status",
+        value:
+          subscriptionData.status === "active"
+            ? "Active"
+            : subscriptionData.status === "low_balance"
+            ? "Low Balance"
+            : subscriptionData.status === "expired"
+            ? "Expired"
+            : "Inactive",
+        description:
+          subscriptionData.subscriptionType === "prepaid"
+            ? `Prepaid - ${formatCurrency(
+                subscriptionData.remainingBalance || 0
+              )} remaining`
+            : `Postpaid - ${getBillingCycleLabel(
+                subscriptionData.billingCycle || ""
+              )}`,
+        icon:
+          subscriptionData.subscriptionType === "prepaid"
+            ? CreditCard
+            : Calendar,
+        trend:
+          subscriptionData.status === "active"
+            ? { value: 0, label: "service active", direction: "up" as const }
+            : subscriptionData.status === "low_balance"
+            ? {
+                value: -15,
+                label: "balance warning",
+                direction: "down" as const,
+              }
+            : undefined,
       },
-    },
-    {
-      title: "Active Services",
-      value: "12",
-      description: "Digital services running",
-      icon: FileText,
-      trend: { value: 2, label: "new this month", direction: "up" as const },
-    },
-    {
-      title: "Outstanding",
-      value: "Nu. 0",
-      description: "All bills paid on time",
-      icon: CreditCard,
-    },
-  ];
+      {
+        title: "Total Signatures",
+        value: (
+          subscriptionData.singleSignaturesUsed +
+          subscriptionData.multipleSignaturesUsed
+        ).toLocaleString(),
+        description: "This billing period",
+        icon: FileText,
+        trend: {
+          value: 12.5,
+          label: "from last period",
+          direction: "up" as const,
+        },
+      },
+      {
+        title: "Usage Cost",
+        value: formatCurrency(getTotalUsageCost(subscriptionData)),
+        description:
+          subscriptionData.subscriptionType === "prepaid"
+            ? "Deducted from balance"
+            : "Current period charges",
+        icon: DollarSign,
+        trend: {
+          value: 8.3,
+          label: "from last period",
+          direction: "up" as const,
+        },
+      },
+      {
+        title: "Service Health",
+        value: "99.2%",
+        description: "Uptime this month",
+        icon: Activity,
+        trend: {
+          value: 0.3,
+          label: "from last month",
+          direction: "up" as const,
+        },
+      },
+    ];
+  };
 
   const metrics =
-    userRole === "SUPER_ADMIN" ? superAdminMetrics : orgAdminMetrics;
+    userRole === "SUPER_ADMIN" ? superAdminMetrics : getOrgAdminMetrics();
 
   return (
     <div className="px-4 lg:px-6">

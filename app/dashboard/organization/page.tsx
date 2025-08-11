@@ -4,11 +4,15 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/lib/toast-context";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
-import { SectionCards } from "@/components/section-cards";
+import { SubscriptionOverview } from "@/components/subscription/subscription-overview";
 import { ChartAreaInteractive } from "@/components/chart-area-interactive";
 import { DataTable } from "@/components/data-table";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Loader2 } from "lucide-react";
+import {
+  getMockSubscriptionData,
+  getOrganizationDisplayName,
+} from "@/lib/mock-subscription-data";
 
 export default function OrganizationAdminDashboard() {
   const { user, loading, error, isAuthenticated } = useAuth({
@@ -30,7 +34,6 @@ export default function OrganizationAdminDashboard() {
           duration: 2000,
         });
 
-        // Small delay to show the toast before redirect
         setTimeout(() => {
           window.location.href = "/login";
         }, 1500);
@@ -41,7 +44,6 @@ export default function OrganizationAdminDashboard() {
           message: "Failed to logout properly. Redirecting anyway...",
         });
 
-        // Still redirect even if logout API fails
         setTimeout(() => {
           window.location.href = "/login";
         }, 2000);
@@ -54,7 +56,6 @@ export default function OrganizationAdminDashboard() {
         message: "Failed to logout properly. Redirecting anyway...",
       });
 
-      // Force redirect even if logout API fails
       setTimeout(() => {
         window.location.href = "/login";
       }, 2000);
@@ -89,18 +90,8 @@ export default function OrganizationAdminDashboard() {
     );
   }
 
-  const getOrgDisplayName = (orgId: string | null) => {
-    switch (orgId) {
-      case "ORG001":
-        return "Ministry of IT";
-      case "ORG002":
-        return "Department of Revenue";
-      case "ORG003":
-        return "Digital Bhutan";
-      default:
-        return "Organization";
-    }
-  };
+  // Get subscription data for the current organization
+  const subscriptionData = getMockSubscriptionData(user.orgId);
 
   return (
     <SidebarProvider
@@ -122,13 +113,15 @@ export default function OrganizationAdminDashboard() {
           user={user}
           breadcrumbItems={[
             { title: "Organization Admin", href: "/dashboard/organization" },
-            { title: `${getOrgDisplayName(user.orgId)} Dashboard` },
+            { title: `${getOrganizationDisplayName(user.orgId)} Dashboard` },
           ]}
         />
         <div className="flex flex-1 flex-col">
           <div className="flex flex-1 flex-col gap-6 py-6">
-            {/* Overview Cards */}
-            <SectionCards userRole="ORGANIZATION_ADMIN" />
+            {/* Subscription Overview - Main Feature */}
+            <div className="px-4 lg:px-6">
+              <SubscriptionOverview subscriptionData={subscriptionData} />
+            </div>
 
             {/* Charts Section */}
             <div className="px-4 lg:px-6">
