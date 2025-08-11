@@ -16,7 +16,7 @@ export default function BillingCycles({
   return (
     <Card className="border-0 shadow-lg">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 pb-2">
           <Calendar className="h-5 w-5" />
           Postpaid Billing Cycles
         </CardTitle>
