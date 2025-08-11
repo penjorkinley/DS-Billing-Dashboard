@@ -8,45 +8,22 @@ import { useToast } from "@/lib/toast-context";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Search,
-  Building2,
-  TrendingUp,
-  Calendar,
-  Grid3X3,
-  List,
-  Edit,
-  Loader2,
-} from "lucide-react";
+import { Loader2, Building2 } from "lucide-react";
 
-// Import the properly structured components
-import { EditOrganizationDialog } from "@/components/organization/edit-organization-dialog";
+// Import custom components
 import {
-  type Organization,
-  type EditOrganizationData,
-} from "@/lib/schemas/organization";
+  OrganizationCard,
+  type OrganizationWithSubscription,
+} from "@/components/organization/organization-card";
+import { OrganizationStats } from "@/components/organization/organization-stats";
+import { OrganizationFilters } from "@/components/organization/organization-filters";
+import { OrganizationTableView } from "@/components/organization/organization-table-view";
+import { type EditOrganizationData } from "@/lib/schemas/organization";
 
-// Sample organization data - in real app, this would come from an API
-const organizationsData: Organization[] = [
+// Sample organization data with subscription details
+const organizationsData: OrganizationWithSubscription[] = [
   {
     id: "ORG001",
     name: "Ministry of Information Technology",
@@ -56,6 +33,14 @@ const organizationsData: Organization[] = [
     createdAt: "2023-03-15",
     contactEmail: "admin@mit.gov.bt",
     subscription: "postpaid",
+    subscriptionDetails: {
+      billingCycle: "quarterly",
+      totalIncurred: 75600,
+      singleSignaturesUsed: 1250,
+      multipleSignaturesUsed: 890,
+      subscriptionDate: "2023-03-15",
+      subscriptionEndDate: "2024-03-15",
+    },
   },
   {
     id: "ORG002",
@@ -66,6 +51,12 @@ const organizationsData: Organization[] = [
     createdAt: "2023-05-22",
     contactEmail: "admin@drc.gov.bt",
     subscription: "prepaid",
+    subscriptionDetails: {
+      remainingBalance: 45000,
+      singleSignaturesUsed: 2100,
+      multipleSignaturesUsed: 1200,
+      subscriptionDate: "2023-05-22",
+    },
   },
   {
     id: "ORG003",
@@ -76,6 +67,14 @@ const organizationsData: Organization[] = [
     createdAt: "2023-01-10",
     contactEmail: "support@digitalBhutan.bt",
     subscription: "postpaid",
+    subscriptionDetails: {
+      billingCycle: "monthly",
+      totalIncurred: 125300,
+      singleSignaturesUsed: 3400,
+      multipleSignaturesUsed: 2800,
+      subscriptionDate: "2023-01-10",
+      subscriptionEndDate: "2024-01-10",
+    },
   },
   {
     id: "ORG004",
@@ -86,6 +85,12 @@ const organizationsData: Organization[] = [
     createdAt: "2023-07-08",
     contactEmail: "admin@health.gov.bt",
     subscription: "prepaid",
+    subscriptionDetails: {
+      remainingBalance: 8500,
+      singleSignaturesUsed: 780,
+      multipleSignaturesUsed: 450,
+      subscriptionDate: "2023-07-08",
+    },
   },
   {
     id: "ORG005",
@@ -96,6 +101,14 @@ const organizationsData: Organization[] = [
     createdAt: "2023-04-12",
     contactEmail: "admin@education.gov.bt",
     subscription: "postpaid",
+    subscriptionDetails: {
+      billingCycle: "half_yearly",
+      totalIncurred: 68700,
+      singleSignaturesUsed: 1800,
+      multipleSignaturesUsed: 1100,
+      subscriptionDate: "2023-04-12",
+      subscriptionEndDate: "2024-04-12",
+    },
   },
   {
     id: "ORG006",
@@ -106,6 +119,12 @@ const organizationsData: Organization[] = [
     createdAt: "2023-06-18",
     contactEmail: "tech@ric.bt",
     subscription: "prepaid",
+    subscriptionDetails: {
+      remainingBalance: 32000,
+      singleSignaturesUsed: 1600,
+      multipleSignaturesUsed: 920,
+      subscriptionDate: "2023-06-18",
+    },
   },
   {
     id: "ORG007",
@@ -116,6 +135,14 @@ const organizationsData: Organization[] = [
     createdAt: "2023-02-28",
     contactEmail: "digital@bpc.bt",
     subscription: "postpaid",
+    subscriptionDetails: {
+      billingCycle: "yearly",
+      totalIncurred: 86700,
+      singleSignaturesUsed: 2200,
+      multipleSignaturesUsed: 1750,
+      subscriptionDate: "2023-02-28",
+      subscriptionEndDate: "2024-02-28",
+    },
   },
   {
     id: "ORG008",
@@ -126,6 +153,12 @@ const organizationsData: Organization[] = [
     createdAt: "2023-09-05",
     contactEmail: "it@nsb.gov.bt",
     subscription: "prepaid",
+    subscriptionDetails: {
+      remainingBalance: 5200,
+      singleSignaturesUsed: 420,
+      multipleSignaturesUsed: 280,
+      subscriptionDate: "2023-09-05",
+    },
   },
 ];
 
@@ -143,7 +176,21 @@ export default function AllOrganizationsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [organizations, setOrganizations] =
-    useState<Organization[]>(organizationsData);
+    useState<OrganizationWithSubscription[]>(organizationsData);
+  const [flippedCards, setFlippedCards] = useState<Set<string>>(new Set());
+
+  // Handle card flip
+  const handleCardClick = (orgId: string) => {
+    setFlippedCards((prev) => {
+      const newFlipped = new Set(prev);
+      if (newFlipped.has(orgId)) {
+        newFlipped.delete(orgId);
+      } else {
+        newFlipped.add(orgId);
+      }
+      return newFlipped;
+    });
+  };
 
   // Handle logout
   const handleLogout = async () => {
@@ -241,6 +288,12 @@ export default function AllOrganizationsPage() {
     return { total, active, inactive, totalRevenue };
   }, [organizations]);
 
+  // Clear filters function
+  const handleClearFilters = () => {
+    setSearchQuery("");
+    setStatusFilter("all");
+  };
+
   // Loading state
   if (loading) {
     return (
@@ -307,7 +360,8 @@ export default function AllOrganizationsPage() {
                     All Organizations
                   </h1>
                   <p className="text-muted-foreground">
-                    Manage and monitor all organizations in your system
+                    Manage and monitor all organizations in your system. Click
+                    on cards to view subscription details.
                   </p>
                 </div>
                 <Button
@@ -321,322 +375,50 @@ export default function AllOrganizationsPage() {
 
             {/* Stats Overview */}
             <div className="px-4 lg:px-6">
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-0 shadow-md">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium text-blue-800">
-                      Total Organizations
-                    </CardTitle>
-                    <Building2 className="h-4 w-4 text-blue-600" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-blue-900">
-                      {stats.total}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-gradient-to-r from-green-50 to-green-100 border-0 shadow-md">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium text-green-800">
-                      Active Organizations
-                    </CardTitle>
-                    <div className="h-2 w-2 rounded-full bg-green-500" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-green-900">
-                      {stats.active}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-gradient-to-r from-red-50 to-red-100 border-0 shadow-md ">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium text-red-800">
-                      Inactive Organizations
-                    </CardTitle>
-                    <div className="h-2 w-2 rounded-full bg-red-500" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-red-900">
-                      {stats.inactive}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-0 shadow-md">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      Total Revenue
-                    </CardTitle>
-                    <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">
-                      Nu. {(stats.totalRevenue / 1000).toFixed(0)}k
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+              <OrganizationStats
+                total={stats.total}
+                active={stats.active}
+                inactive={stats.inactive}
+                totalRevenue={stats.totalRevenue}
+              />
             </div>
 
             {/* Filters and Controls */}
             <div className="px-4 lg:px-6">
-              <Card className="border-0 shadow-md">
-                <CardHeader>
-                  <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                    <div className="flex flex-1 gap-4">
-                      <div className="relative flex-1 max-w-md">
-                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                          placeholder="Search organizations..."
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          className="pl-10"
-                        />
-                      </div>
-
-                      <Select
-                        value={statusFilter}
-                        onValueChange={setStatusFilter}
-                      >
-                        <SelectTrigger className="w-[150px]">
-                          <SelectValue placeholder="All Status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Status</SelectItem>
-                          <SelectItem value="active">Active</SelectItem>
-                          <SelectItem value="inactive">Inactive</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="flex items-center gap-1 bg-muted p-1 rounded-lg">
-                      <Button
-                        variant={viewMode === "grid" ? "default" : "ghost"}
-                        size="sm"
-                        onClick={() => setViewMode("grid")}
-                        className={`h-8 px-3 ${
-                          viewMode === "grid" ? "bg-white shadow-sm" : ""
-                        }`}
-                      >
-                        <Grid3X3 className="h-4 w-4 mr-1" />
-                        Cards
-                      </Button>
-                      <Button
-                        variant={viewMode === "table" ? "default" : "ghost"}
-                        size="sm"
-                        onClick={() => setViewMode("table")}
-                        className={`h-8 px-3 ${
-                          viewMode === "table" ? "bg-white shadow-sm" : ""
-                        }`}
-                      >
-                        <List className="h-4 w-4 mr-1" />
-                        Table
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-
-                <CardContent className="pt-0">
-                  <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <span>
-                      Showing {filteredOrganizations.length} of{" "}
-                      {organizations.length} organizations
-                    </span>
-                    {(searchQuery || statusFilter !== "all") && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setSearchQuery("");
-                          setStatusFilter("all");
-                        }}
-                      >
-                        Clear filters
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+              <OrganizationFilters
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                statusFilter={statusFilter}
+                onStatusFilterChange={setStatusFilter}
+                viewMode={viewMode}
+                onViewModeChange={setViewMode}
+                totalCount={organizations.length}
+                filteredCount={filteredOrganizations.length}
+                onClearFilters={handleClearFilters}
+              />
             </div>
 
             {/* Organizations Display */}
             <div className="px-4 lg:px-6">
               {viewMode === "grid" ? (
-                /* Grid View */
+                /* Grid View with Flip Cards */
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                   {filteredOrganizations.map((org) => (
-                    <Card
+                    <OrganizationCard
                       key={org.id}
-                      className="group hover:shadow-xl transition-all duration-300 border-0 shadow-md hover:-translate-y-1 "
-                    >
-                      <CardHeader className="pb-2">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <CardTitle className="text-xl font-bold group-hover:text-primary transition-colors">
-                              {org.name}
-                            </CardTitle>
-                            <p className="text-sm text-muted-foreground mt-1 font-medium">
-                              {org.shortName}
-                            </p>
-                          </div>
-                          <EditOrganizationDialog
-                            organization={org}
-                            onSave={handleOrganizationUpdate}
-                          >
-                            <Button
-                              variant="ghost"
-                              className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-accent"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          </EditOrganizationDialog>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between">
-                            <Badge
-                              variant={
-                                org.status === "active"
-                                  ? "default"
-                                  : "secondary"
-                              }
-                              className={
-                                org.status === "active"
-                                  ? "bg-green-100 text-green-800 hover:bg-green-100 border-0"
-                                  : "bg-red-100 text-red-800 hover:bg-red-100 border-0"
-                              }
-                            >
-                              {org.status === "active"
-                                ? "● Active"
-                                : "● Inactive"}
-                            </Badge>
-                            <Badge variant="outline" className="capitalize">
-                              {org.subscription}
-                            </Badge>
-                          </div>
-
-                          <div className="bg-gray-50 rounded-lg p-3">
-                            <div>
-                              <p className="text-xs text-muted-foreground uppercase tracking-wide">
-                                Monthly Revenue
-                              </p>
-                              <p className="text-2xl font-bold text-gray-900">
-                                Nu. {(org.revenue / 1000).toFixed(0)}k
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="pt-2 border-t border-gray-200">
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                              <Calendar className="h-3 w-3" />
-                              Created:{" "}
-                              {new Date(org.createdAt).toLocaleDateString(
-                                "en-GB",
-                                {
-                                  day: "2-digit",
-                                  month: "short",
-                                  year: "numeric",
-                                }
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                      organization={org}
+                      isFlipped={flippedCards.has(org.id)}
+                      onCardClick={() => handleCardClick(org.id)}
+                      onUpdate={handleOrganizationUpdate}
+                    />
                   ))}
                 </div>
               ) : (
                 /* Table View */
-                <Card className="border-0 shadow-lg">
-                  <div className="px-4">
-                    <Table className="border-gray-200">
-                      <TableHeader>
-                        <TableRow className="border-gray-200">
-                          <TableHead>Organization</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Subscription</TableHead>
-                          <TableHead className="text-right">Revenue</TableHead>
-                          <TableHead>Created Date</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredOrganizations.map((org) => (
-                          <TableRow
-                            key={org.id}
-                            className="group border-gray-200"
-                          >
-                            <TableCell className="border-gray-200">
-                              <div>
-                                <div className="font-medium text-base">
-                                  {org.name}
-                                </div>
-                                <div className="text-sm text-muted-foreground">
-                                  {org.shortName} • {org.contactEmail}
-                                </div>
-                              </div>
-                            </TableCell>
-                            <TableCell className="border-gray-200">
-                              <Badge
-                                variant={
-                                  org.status === "active"
-                                    ? "default"
-                                    : "secondary"
-                                }
-                                className={
-                                  org.status === "active"
-                                    ? "bg-green-100 text-green-800 hover:bg-green-100 border-0"
-                                    : "bg-red-100 text-red-800 hover:bg-red-100 border-0"
-                                }
-                              >
-                                {org.status === "active"
-                                  ? "● Active"
-                                  : "● Inactive"}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="border-gray-200">
-                              <Badge
-                                variant="outline"
-                                className="capitalize border-gray-200"
-                              >
-                                {org.subscription}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-right font-medium border-gray-200">
-                              Nu. {org.revenue.toLocaleString()}
-                            </TableCell>
-                            <TableCell className="text-sm text-muted-foreground border-gray-200">
-                              {new Date(org.createdAt).toLocaleDateString(
-                                "en-GB",
-                                {
-                                  day: "2-digit",
-                                  month: "short",
-                                  year: "numeric",
-                                }
-                              )}
-                            </TableCell>
-                            <TableCell className="text-right border-gray-200">
-                              <EditOrganizationDialog
-                                organization={org}
-                                onSave={handleOrganizationUpdate}
-                              >
-                                <Button
-                                  variant="ghost"
-                                  className="h-8 w-8 p-0 hover:bg-accent"
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                              </EditOrganizationDialog>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </Card>
+                <OrganizationTableView
+                  organizations={filteredOrganizations}
+                  onUpdate={handleOrganizationUpdate}
+                />
               )}
 
               {filteredOrganizations.length === 0 && (
@@ -652,13 +434,7 @@ export default function AllOrganizationsPage() {
                         : "Get started by adding your first organization."}
                     </p>
                     {(searchQuery || statusFilter !== "all") && (
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setSearchQuery("");
-                          setStatusFilter("all");
-                        }}
-                      >
+                      <Button variant="outline" onClick={handleClearFilters}>
                         Clear filters
                       </Button>
                     )}
