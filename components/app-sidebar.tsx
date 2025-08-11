@@ -48,7 +48,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
 
 // Super Admin Navigation Items
 const superAdminNavItems = [
@@ -90,29 +89,29 @@ const superAdminNavItems = [
     icon: CreditCard,
     url: "/dashboard/super-admin/billing",
   },
-  {
-    title: "Reports",
-    icon: BarChart3,
-    items: [
-      {
-        title: "Financial Reports",
-        url: "/dashboard/super-admin/reports/financial",
-      },
-      {
-        title: "Usage Analytics",
-        url: "/dashboard/super-admin/reports/usage",
-      },
-      {
-        title: "System Performance",
-        url: "/dashboard/super-admin/reports/performance",
-      },
-    ],
-  },
-  {
-    title: "Settings",
-    icon: Settings,
-    url: "/dashboard/super-admin/settings",
-  },
+  // {
+  //   title: "Reports",
+  //   icon: BarChart3,
+  //   items: [
+  //     {
+  //       title: "Financial Reports",
+  //       url: "/dashboard/super-admin/reports/financial",
+  //     },
+  //     {
+  //       title: "Usage Analytics",
+  //       url: "/dashboard/super-admin/reports/usage",
+  //     },
+  //     {
+  //       title: "System Performance",
+  //       url: "/dashboard/super-admin/reports/performance",
+  //     },
+  //   ],
+  // },
+  // {
+  //   title: "Settings",
+  //   icon: Settings,
+  //   url: "/dashboard/super-admin/settings",
+  // },
 ];
 
 // Organization Admin Navigation Items
