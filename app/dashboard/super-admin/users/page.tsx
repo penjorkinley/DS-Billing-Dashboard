@@ -445,10 +445,10 @@ export default function AllUsersPage() {
                     Showing {filteredUsers.length} of {users.length} users
                   </div>
 
-                  <div className="rounded-md border">
-                    <Table>
+                  <div className="rounded-md border border-gray-200">
+                    <Table className="border-gray-200">
                       <TableHeader>
-                        <TableRow>
+                        <TableRow className="border-gray-200">
                           <TableHead>User ID</TableHead>
                           <TableHead>Role</TableHead>
                           <TableHead>Organization ID</TableHead>
@@ -459,11 +459,14 @@ export default function AllUsersPage() {
                       </TableHeader>
                       <TableBody>
                         {filteredUsers.map((user) => (
-                          <TableRow key={user.id} className="group">
-                            <TableCell>
+                          <TableRow
+                            key={user.id}
+                            className="group border-gray-200"
+                          >
+                            <TableCell className="border-gray-200">
                               <div className="font-medium">{user.userid}</div>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="border-gray-200">
                               <Badge
                                 variant={
                                   user.role === ROLES.SUPER_ADMIN
@@ -489,12 +492,12 @@ export default function AllUsersPage() {
                                 )}
                               </Badge>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="border-gray-200">
                               <div className="text-sm font-mono">
                                 {user.orgId || "N/A"}
                               </div>
                             </TableCell>
-                            <TableCell className="text-sm text-muted-foreground">
+                            <TableCell className="text-sm text-muted-foreground border-gray-200">
                               {new Date(user.createdAt).toLocaleDateString(
                                 "en-GB",
                                 {
@@ -506,7 +509,7 @@ export default function AllUsersPage() {
                                 }
                               )}
                             </TableCell>
-                            <TableCell className="text-sm text-muted-foreground">
+                            <TableCell className="text-sm text-muted-foreground border-gray-200">
                               {new Date(user.updatedAt).toLocaleDateString(
                                 "en-GB",
                                 {
@@ -518,7 +521,7 @@ export default function AllUsersPage() {
                                 }
                               )}
                             </TableCell>
-                            <TableCell className="text-right">
+                            <TableCell className="text-right border-gray-200">
                               <div className="flex items-center justify-end gap-2">
                                 {/* Edit Button */}
                                 <EditUserDialog

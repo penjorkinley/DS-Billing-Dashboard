@@ -552,9 +552,9 @@ export default function AllOrganizationsPage() {
                 /* Table View */
                 <Card className="border-0 shadow-lg">
                   <div className="px-4">
-                    <Table>
+                    <Table className="border-gray-200">
                       <TableHeader>
-                        <TableRow>
+                        <TableRow className="border-gray-200">
                           <TableHead>Organization</TableHead>
                           <TableHead>Status</TableHead>
                           <TableHead>Subscription</TableHead>
@@ -565,8 +565,11 @@ export default function AllOrganizationsPage() {
                       </TableHeader>
                       <TableBody>
                         {filteredOrganizations.map((org) => (
-                          <TableRow key={org.id} className="group">
-                            <TableCell>
+                          <TableRow
+                            key={org.id}
+                            className="group border-gray-200"
+                          >
+                            <TableCell className="border-gray-200">
                               <div>
                                 <div className="font-medium text-base">
                                   {org.name}
@@ -576,7 +579,7 @@ export default function AllOrganizationsPage() {
                                 </div>
                               </div>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="border-gray-200">
                               <Badge
                                 variant={
                                   org.status === "active"
@@ -594,15 +597,18 @@ export default function AllOrganizationsPage() {
                                   : "● Inactive"}
                               </Badge>
                             </TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className="capitalize">
+                            <TableCell className="border-gray-200">
+                              <Badge
+                                variant="outline"
+                                className="capitalize border-gray-200"
+                              >
                                 {org.subscription}
                               </Badge>
                             </TableCell>
-                            <TableCell className="text-right font-medium">
+                            <TableCell className="text-right font-medium border-gray-200">
                               Nu. {org.revenue.toLocaleString()}
                             </TableCell>
-                            <TableCell className="text-sm text-muted-foreground">
+                            <TableCell className="text-sm text-muted-foreground border-gray-200">
                               {new Date(org.createdAt).toLocaleDateString(
                                 "en-GB",
                                 {
@@ -612,7 +618,7 @@ export default function AllOrganizationsPage() {
                                 }
                               )}
                             </TableCell>
-                            <TableCell className="text-right">
+                            <TableCell className="text-right border-gray-200">
                               <EditOrganizationDialog
                                 organization={org}
                                 onSave={handleOrganizationUpdate}

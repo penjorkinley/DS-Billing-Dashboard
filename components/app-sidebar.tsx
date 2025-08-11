@@ -86,22 +86,9 @@ const superAdminNavItems = [
     ],
   },
   {
-    title: "System",
-    icon: Server,
-    items: [
-      {
-        title: "Server Status",
-        url: "/dashboard/super-admin/system/status",
-      },
-      {
-        title: "Database",
-        url: "/dashboard/super-admin/system/database",
-      },
-      {
-        title: "Audit Logs",
-        url: "/dashboard/super-admin/system/logs",
-      },
-    ],
+    title: "Pricing & Billing",
+    icon: CreditCard,
+    url: "/dashboard/super-admin/billing",
   },
   {
     title: "Reports",
