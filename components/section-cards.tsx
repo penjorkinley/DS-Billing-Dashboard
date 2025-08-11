@@ -25,7 +25,6 @@ interface MetricCardProps {
     label: string;
     direction: "up" | "down";
   };
-  highlight?: boolean;
 }
 
 function MetricCard({
@@ -34,28 +33,19 @@ function MetricCard({
   description,
   icon: Icon,
   trend,
-  highlight,
 }: MetricCardProps) {
   const TrendIcon = trend?.direction === "up" ? TrendingUp : TrendingDown;
   const trendColor =
     trend?.direction === "up" ? "text-green-600" : "text-red-600";
 
   return (
-    <Card className={highlight ? "border-primary shadow-md" : ""}>
+    <Card className="border-gray-200 shadow-md">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <Icon
-          className={`h-4 w-4 ${
-            highlight ? "text-primary" : "text-muted-foreground"
-          }`}
-        />
+        <Icon className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
       <CardContent>
-        <div
-          className={`text-2xl font-bold ${highlight ? "text-primary" : ""}`}
-        >
-          {value}
-        </div>
+        <div className="text-2xl font-bold">{value}</div>
         <p className="text-xs text-muted-foreground mb-1">{description}</p>
         {trend && (
           <div className="flex items-center gap-1">
@@ -90,7 +80,6 @@ export function SectionCards({
         label: "from last month",
         direction: "up" as const,
       },
-      highlight: true,
     },
     {
       title: "Organizations",
@@ -126,7 +115,6 @@ export function SectionCards({
       description: "In your organization",
       icon: Users,
       trend: { value: 5.2, label: "from last week", direction: "up" as const },
-      highlight: true,
     },
     {
       title: "Monthly Usage",
@@ -151,7 +139,6 @@ export function SectionCards({
       value: "Nu. 0",
       description: "All bills paid on time",
       icon: CreditCard,
-      highlight: false,
     },
   ];
 
@@ -184,7 +171,6 @@ export function SectionCards({
             description={metric.description}
             icon={metric.icon}
             trend={metric.trend}
-            highlight={metric.highlight}
           />
         ))}
       </div>

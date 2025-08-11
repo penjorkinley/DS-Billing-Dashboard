@@ -144,7 +144,7 @@ export function ChartAreaInteractive({
                 content={({ active, payload, label }) => {
                   if (active && payload && payload.length) {
                     return (
-                      <div className="bg-background border rounded-lg shadow-lg p-3">
+                      <div className="bg-background border border-gray-200 rounded-lg shadow-lg p-3">
                         <p className="font-medium">{label}</p>
                         <p className="text-primary">
                           {userRole === "SUPER_ADMIN"
@@ -194,7 +194,7 @@ export function ChartAreaInteractive({
                 content={({ active, payload, label }) => {
                   if (active && payload && payload.length) {
                     return (
-                      <div className="bg-background border rounded-lg shadow-lg p-3">
+                      <div className="bg-background border border-gray-200 rounded-lg shadow-lg p-3">
                         <p className="font-medium">{label}</p>
                         <p className="text-primary">
                           Usage: {payload[0].value}%
@@ -237,7 +237,7 @@ export function ChartAreaInteractive({
                 content={({ active, payload, label }) => {
                   if (active && payload && payload.length) {
                     return (
-                      <div className="bg-background border rounded-lg shadow-lg p-3">
+                      <div className="bg-background border border-gray-200 rounded-lg shadow-lg p-3">
                         <p className="font-medium">{label}</p>
                         <p className="text-primary">
                           Total Users:{" "}
@@ -295,7 +295,7 @@ export function ChartAreaInteractive({
                   if (active && payload && payload.length) {
                     const data = payload[0].payload;
                     return (
-                      <div className="bg-background border rounded-lg shadow-lg p-3">
+                      <div className="bg-background border border-gray-200 rounded-lg shadow-lg p-3">
                         <p className="font-medium">{data.name}</p>
                         <p className="text-primary">
                           Users: {data.value.toLocaleString()}
@@ -371,7 +371,7 @@ export function ChartAreaInteractive({
   };
 
   return (
-    <Card>
+    <Card className="border-gray-200">
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
         <div className="space-y-1">
           <CardTitle className="text-xl">{getChartTitle()}</CardTitle>
@@ -384,7 +384,7 @@ export function ChartAreaInteractive({
             value={activeChart}
             onValueChange={(value) => setActiveChart(value as ChartType)}
           >
-            <SelectTrigger className="w-[140px]">
+            <SelectTrigger className="w-[140px] border-gray-200">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

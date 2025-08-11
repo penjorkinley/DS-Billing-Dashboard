@@ -394,7 +394,7 @@ export function DataTable({ userRole = "ORGANIZATION_ADMIN" }: DataTableProps) {
   };
 
   return (
-    <Card>
+    <Card className="border-gray-200">
       <CardHeader>
         <CardTitle>{getTableTitle()}</CardTitle>
         <div className="flex items-center justify-between space-x-2">
@@ -413,13 +413,13 @@ export function DataTable({ userRole = "ORGANIZATION_ADMIN" }: DataTableProps) {
                     .getColumn(getFilterColumn())
                     ?.setFilterValue(event.target.value)
                 }
-                className="pl-8 max-w-sm"
+                className="pl-8 max-w-sm border-gray-200"
               />
             </div>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="ml-auto">
+              <Button variant="outline" className="ml-auto border-gray-200">
                 Columns <ChevronDown className="ml-2 h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -446,14 +446,14 @@ export function DataTable({ userRole = "ORGANIZATION_ADMIN" }: DataTableProps) {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="rounded-md border">
+        <div className="rounded-md border border-gray-200">
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
+                <TableRow key={headerGroup.id} className="border-gray-200">
                   {headerGroup.headers.map((header) => {
                     return (
-                      <TableHead key={header.id}>
+                      <TableHead key={header.id} className="border-gray-200">
                         {header.isPlaceholder
                           ? null
                           : flexRender(
@@ -472,9 +472,10 @@ export function DataTable({ userRole = "ORGANIZATION_ADMIN" }: DataTableProps) {
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
+                    className="border-gray-200"
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
+                      <TableCell key={cell.id} className="border-gray-200">
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext()
@@ -487,7 +488,7 @@ export function DataTable({ userRole = "ORGANIZATION_ADMIN" }: DataTableProps) {
                 <TableRow>
                   <TableCell
                     colSpan={columns.length}
-                    className="h-24 text-center"
+                    className="h-24 text-center border-gray-200"
                   >
                     No results.
                   </TableCell>
@@ -507,6 +508,7 @@ export function DataTable({ userRole = "ORGANIZATION_ADMIN" }: DataTableProps) {
               size="sm"
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}
+              className="border-gray-200"
             >
               Previous
             </Button>
@@ -515,6 +517,7 @@ export function DataTable({ userRole = "ORGANIZATION_ADMIN" }: DataTableProps) {
               size="sm"
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
+              className="border-gray-200"
             >
               Next
             </Button>
