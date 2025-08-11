@@ -484,7 +484,7 @@ export default function BillingConfigurationPage() {
                                 parseFloat(e.target.value) || 0
                               )
                             }
-                            className={`text-lg font-medium ${
+                            className={`text-lg font-medium border border-gray-200${
                               formErrors["pricing.singleSignaturePrice"]
                                 ? "border-destructive"
                                 : ""
@@ -522,7 +522,7 @@ export default function BillingConfigurationPage() {
                                 parseFloat(e.target.value) || 0
                               )
                             }
-                            className={`text-lg font-medium ${
+                            className={`text-lg font-medium border border-gray-200 ${
                               formErrors["pricing.multipleSignaturePrice"]
                                 ? "border-destructive"
                                 : ""

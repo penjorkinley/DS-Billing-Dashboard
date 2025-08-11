@@ -51,7 +51,7 @@ export function OrganizationFilters({
                 placeholder="Search organizations..."
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
-                className="pl-10"
+                className="pl-10 border border-gray-200"
               />
             </div>
 
