@@ -224,13 +224,22 @@ export default function BillingConfigurationPage() {
             <div className="px-4 lg:px-6">
               <Tabs defaultValue="overview" className="space-y-6">
                 <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="overview" className="cursor-pointer">
+                  <TabsTrigger
+                    value="overview"
+                    className="gap-2 cursor-pointer py-3 px-4 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-200 hover:bg-muted/50 rounded-md"
+                  >
                     Overview
                   </TabsTrigger>
-                  <TabsTrigger value="pricing" className="cursor-pointer">
+                  <TabsTrigger
+                    value="pricing"
+                    className="gap-2 cursor-pointer py-3 px-4 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-200 hover:bg-muted/50 rounded-md"
+                  >
                     Pricing
                   </TabsTrigger>
-                  <TabsTrigger value="billing" className="cursor-pointer">
+                  <TabsTrigger
+                    value="billing"
+                    className="gap-2 cursor-pointer py-3 px-4 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-200 hover:bg-muted/50 rounded-md"
+                  >
                     Billing Cycles
                   </TabsTrigger>
                 </TabsList>

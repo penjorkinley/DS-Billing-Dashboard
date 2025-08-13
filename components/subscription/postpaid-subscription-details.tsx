@@ -2,12 +2,14 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import {
   Calendar,
   Clock,
   CreditCard,
   AlertCircle,
   CheckCircle,
+  DollarSign,
 } from "lucide-react";
 import type { SubscriptionData } from "./subscription-overview";
 
@@ -74,19 +76,23 @@ export function PostpaidSubscriptionDetails({
     return Math.min(100, Math.max(0, (elapsed / totalDuration) * 100));
   };
 
+  const getProgressColor = () => {
+    const progress = getSubscriptionProgress();
+    if (progress < 70) return "bg-green-500";
+    if (progress < 90) return "bg-yellow-500";
+    return "bg-red-500";
+  };
+
   return (
-    <Card className="border-0 shadow-md">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Calendar className="h-5 w-5 text-green-600" />
-          Postpaid Subscription Details
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Current Bill Overview */}
-        <div className="space-y-4">
+    <div className="grid gap-6 md:grid-cols-2">
+      {/* Left Card - Current Billing Information */}
+      <Card className="border-0 shadow-md">
+        <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
-            <h4 className="font-medium">Current Billing Period</h4>
+            <CardTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5 text-green-600" />
+              Current Billing
+            </CardTitle>
             <Badge
               variant="outline"
               className={`${
@@ -115,55 +121,117 @@ export function PostpaidSubscriptionDetails({
               )}
             </Badge>
           </div>
-
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Current Bill Amount */}
           <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-2xl font-bold text-primary">
+            <div className="flex justify-between items-baseline">
+              <span className="text-3xl font-bold text-primary">
                 {formatCurrency(subscriptionData.currentBillAmount || 0)}
               </span>
               <span className="text-sm text-muted-foreground">
-                Current Bill
+                Current charges
               </span>
             </div>
 
-            {/* Progress bar showing subscription period */}
-            <div className="w-full bg-gray-200 rounded-full h-3">
-              <div
-                className={`h-3 rounded-full transition-all duration-300 ${
-                  isExpired()
-                    ? "bg-red-500"
-                    : isExpiringSoon()
-                    ? "bg-yellow-500"
-                    : "bg-green-500"
-                }`}
-                style={{ width: `${getSubscriptionProgress()}%` }}
-              />
+            {/* Subscription Progress */}
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm text-muted-foreground">
+                <span>Billing Period Progress</span>
+                <span>{getSubscriptionProgress().toFixed(1)}% elapsed</span>
+              </div>
+              <Progress value={getSubscriptionProgress()} className="h-3" />
             </div>
 
-            <div className="flex justify-between text-sm text-muted-foreground">
-              <span>
-                Period: {getSubscriptionProgress().toFixed(1)}% complete
-              </span>
-              {getDaysUntilExpiry() !== null && (
-                <span>
+            {/* Days Remaining */}
+            {getDaysUntilExpiry() !== null && (
+              <div className="text-center p-2 bg-muted/50 rounded-lg">
+                <span className="text-sm font-medium">
                   {getDaysUntilExpiry()! > 0
                     ? `${getDaysUntilExpiry()} days remaining`
                     : `Expired ${Math.abs(getDaysUntilExpiry()!)} days ago`}
                 </span>
-              )}
+              </div>
+            )}
+          </div>
+
+          {/* Billing Cycle Info */}
+          <div className="p-3 bg-gray-50 rounded-lg space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium">Billing Cycle:</span>
+              <span className="text-sm font-semibold">
+                {getBillingCycleLabel(subscriptionData.billingCycle || "")}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium">Status:</span>
+              <span
+                className={`text-sm font-semibold ${
+                  subscriptionData.status === "active"
+                    ? "text-green-600"
+                    : "text-red-600"
+                }`}
+              >
+                {subscriptionData.status === "active" ? "Active" : "Inactive"}
+              </span>
             </div>
           </div>
-        </div>
 
-        {/* Subscription Information */}
-        <div className="grid gap-4 pt-4 border-t">
-          <div className="grid grid-cols-2 gap-4">
+          {/* Expiry Warning */}
+          {isExpiringSoon() && (
+            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="flex items-start gap-2">
+                <Clock className="h-4 w-4 text-yellow-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <h5 className="font-medium text-yellow-800 text-sm">
+                    Subscription Expiring Soon
+                  </h5>
+                  <p className="text-xs text-yellow-700 mt-1">
+                    Your subscription will expire in {getDaysUntilExpiry()}{" "}
+                    days. Please contact your administrator to renew.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Expired Warning */}
+          {isExpired() && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <h5 className="font-medium text-red-800 text-sm">
+                    Subscription Expired
+                  </h5>
+                  <p className="text-xs text-red-700 mt-1">
+                    Your subscription expired {Math.abs(getDaysUntilExpiry()!)}{" "}
+                    days ago. Services may be restricted.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Right Card - Subscription Information */}
+      <Card className="border-0 shadow-md">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-blue-600" />
+            Subscription Details
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Subscription Dates */}
+          <div className="space-y-4">
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Calendar className="h-4 w-4" />
                 Start Date
               </div>
-              <p className="font-medium">
+              <p className="text-lg font-semibold">
                 {formatDate(subscriptionData.subscriptionDate)}
               </p>
             </div>
@@ -173,98 +241,54 @@ export function PostpaidSubscriptionDetails({
                 <Calendar className="h-4 w-4" />
                 End Date
               </div>
-              <p className="font-medium">
+              <p className="text-lg font-semibold">
                 {subscriptionData.subscriptionEndDate
                   ? formatDate(subscriptionData.subscriptionEndDate)
                   : "N/A"}
               </p>
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Clock className="h-4 w-4" />
-              Billing Cycle
-            </div>
-            <p className="font-medium">
-              {getBillingCycleLabel(subscriptionData.billingCycle || "")}
-            </p>
-          </div>
-
-          {/* Expiry Warning */}
-          {isExpiringSoon() && (
-            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <div className="flex items-start gap-3">
-                <Clock className="h-5 w-5 text-yellow-600 mt-0.5" />
-                <div>
-                  <h5 className="font-medium text-yellow-800">
-                    Subscription Expiring Soon
-                  </h5>
-                  <p className="text-sm text-yellow-700 mt-1">
-                    Your subscription will expire in {getDaysUntilExpiry()}{" "}
-                    days. Please contact your administrator to renew your
-                    subscription.
-                  </p>
-                </div>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <DollarSign className="h-4 w-4" />
+                Billing Frequency
               </div>
-            </div>
-          )}
-
-          {/* Expired Warning */}
-          {isExpired() && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
-                <div>
-                  <h5 className="font-medium text-red-800">
-                    Subscription Expired
-                  </h5>
-                  <p className="text-sm text-red-700 mt-1">
-                    Your subscription expired {Math.abs(getDaysUntilExpiry()!)}{" "}
-                    days ago. Services may be restricted. Please contact your
-                    administrator immediately.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Billing Status */}
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <h5 className="font-medium mb-2">Billing Information</h5>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Billing Model:</span>
-                <span className="font-medium">Postpaid</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Payment Due:</span>
-                <span className="font-medium">
-                  {subscriptionData.subscriptionEndDate
-                    ? formatDate(subscriptionData.subscriptionEndDate)
-                    : "N/A"}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Status:</span>
-                <span
-                  className={`font-medium ${
-                    subscriptionData.status === "active"
-                      ? "text-green-600"
-                      : "text-red-600"
-                  }`}
-                >
-                  {subscriptionData.status === "active"
-                    ? "Active"
-                    : isExpired()
-                    ? "Expired"
-                    : "Inactive"}
-                </span>
-              </div>
+              <p className="text-lg font-semibold">
+                {getBillingCycleLabel(subscriptionData.billingCycle || "")}
+              </p>
             </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+
+          {/* Subscription Duration */}
+          <div className="p-3 bg-blue-50 rounded-lg">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-medium text-blue-800">
+                Total Duration:
+              </span>
+              <span className="text-sm font-semibold text-blue-900">
+                {subscriptionData.subscriptionEndDate && (
+                  <>
+                    {Math.ceil(
+                      (new Date(
+                        subscriptionData.subscriptionEndDate
+                      ).getTime() -
+                        new Date(subscriptionData.subscriptionDate).getTime()) /
+                        (1000 * 60 * 60 * 24)
+                    )}{" "}
+                    days
+                  </>
+                )}
+              </span>
+            </div>
+            <div className="text-xs text-blue-700">
+              From {formatDate(subscriptionData.subscriptionDate)} to{" "}
+              {subscriptionData.subscriptionEndDate
+                ? formatDate(subscriptionData.subscriptionEndDate)
+                : "N/A"}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

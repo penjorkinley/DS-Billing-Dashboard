@@ -52,18 +52,15 @@ export function PrepaidSubscriptionDetails({
   };
 
   return (
-    <Card className="border-0 shadow-md">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Wallet className="h-5 w-5 text-blue-600" />
-          Prepaid Subscription Details
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Balance Overview */}
-        <div className="space-y-4">
+    <div className="grid gap-6 md:grid-cols-2">
+      {/* Left Card - Account Balance Information */}
+      <Card className="border-0 shadow-md">
+        <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
-            <h4 className="font-medium">Account Balance</h4>
+            <CardTitle className="flex items-center gap-2">
+              <Wallet className="h-5 w-5 text-blue-600" />
+              Account Balance
+            </CardTitle>
             {isLowBalance() && (
               <Badge
                 variant="outline"
@@ -74,10 +71,12 @@ export function PrepaidSubscriptionDetails({
               </Badge>
             )}
           </div>
-
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Current Balance Display */}
           <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-2xl font-bold text-primary">
+            <div className="flex justify-between items-baseline">
+              <span className="text-3xl font-bold text-primary">
                 {formatCurrency(subscriptionData.remainingBalance || 0)}
               </span>
               <span className="text-sm text-muted-foreground">
@@ -87,9 +86,11 @@ export function PrepaidSubscriptionDetails({
 
             <Progress value={getBalancePercentage()} className="h-3" />
 
-            <div className="flex justify-between text-sm text-muted-foreground">
-              <span>{getBalancePercentage().toFixed(1)}% remaining</span>
-              <span>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">
+                {getBalancePercentage().toFixed(1)}% remaining
+              </span>
+              <span className="text-muted-foreground">
                 {formatCurrency(
                   (subscriptionData.initialAmount || 0) -
                     (subscriptionData.remainingBalance || 0)
@@ -98,17 +99,66 @@ export function PrepaidSubscriptionDetails({
               </span>
             </div>
           </div>
-        </div>
 
-        {/* Subscription Information */}
-        <div className="grid gap-4 pt-4 border-t">
-          <div className="grid grid-cols-2 gap-4">
+          {/* Account Status */}
+          <div className="py-3 bg-gray-50 rounded-lg space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium">Status:</span>
+              <span
+                className={`text-sm font-semibold ${
+                  subscriptionData.status === "active"
+                    ? "text-green-600"
+                    : "text-red-600"
+                }`}
+              >
+                {subscriptionData.status === "active" ? "Active" : "Inactive"}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium">Low Balance Alert:</span>
+              <span className="text-sm font-semibold">
+                {formatCurrency(subscriptionData.lowBalanceThreshold || 0)}
+              </span>
+            </div>
+          </div>
+
+          {/* Low Balance Warning */}
+          {isLowBalance() && (
+            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <h5 className="font-medium text-yellow-800 text-sm">
+                    Low Balance Warning
+                  </h5>
+                  <p className="text-xs text-yellow-700 mt-1">
+                    Your account balance is running low. Consider topping up to
+                    avoid service interruption.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Right Card - Subscription Information */}
+      <Card className="border-0 shadow-md">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-green-600" />
+            Subscription Details
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Subscription Info */}
+          <div className="space-y-4">
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Calendar className="h-4 w-4" />
                 Subscription Date
               </div>
-              <p className="font-medium">
+              <p className="text-lg font-semibold">
                 {formatDate(subscriptionData.subscriptionDate)}
               </p>
             </div>
@@ -118,59 +168,26 @@ export function PrepaidSubscriptionDetails({
                 <Wallet className="h-4 w-4" />
                 Initial Amount
               </div>
-              <p className="font-medium">
+              <p className="text-lg font-semibold">
                 {formatCurrency(subscriptionData.initialAmount || 0)}
               </p>
             </div>
-          </div>
 
-          {/* Low Balance Warning */}
-          {isLowBalance() && (
-            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
-                <div>
-                  <h5 className="font-medium text-yellow-800">
-                    Low Balance Warning
-                  </h5>
-                  <p className="text-sm text-yellow-700 mt-1">
-                    Your account balance is running low. Consider topping up to
-                    avoid service interruption. Current balance:{" "}
-                    {formatCurrency(subscriptionData.remainingBalance || 0)}
-                  </p>
-                </div>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <TrendingDown className="h-4 w-4" />
+                Total Used
               </div>
-            </div>
-          )}
-
-          {/* Account Status */}
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <h5 className="font-medium mb-2">Account Status</h5>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Status:</span>
-                <span
-                  className={`font-medium ${
-                    subscriptionData.status === "active"
-                      ? "text-green-600"
-                      : "text-red-600"
-                  }`}
-                >
-                  {subscriptionData.status === "active" ? "Active" : "Inactive"}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">
-                  Low Balance Threshold:
-                </span>
-                <span className="font-medium">
-                  {formatCurrency(subscriptionData.lowBalanceThreshold || 0)}
-                </span>
-              </div>
+              <p className="text-lg font-semibold">
+                {formatCurrency(
+                  (subscriptionData.initialAmount || 0) -
+                    (subscriptionData.remainingBalance || 0)
+                )}
+              </p>
             </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

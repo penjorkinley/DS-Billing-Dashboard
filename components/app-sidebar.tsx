@@ -122,22 +122,9 @@ const orgAdminNavItems = [
     url: "/dashboard/organization",
   },
   {
-    title: "Billing",
+    title: "Usage & Billing",
     icon: CreditCard,
-    items: [
-      {
-        title: "Current Bills",
-        url: "/dashboard/organization/billing",
-      },
-      {
-        title: "Payment History",
-        url: "/dashboard/organization/billing/history",
-      },
-      {
-        title: "Usage Reports",
-        url: "/dashboard/organization/billing/reports",
-      },
-    ],
+    url: "/dashboard/organization/usage-billing",
   },
   {
     title: "Services",
