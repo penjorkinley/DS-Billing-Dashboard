@@ -1,6 +1,7 @@
+// lib/schemas/organization.ts
 import { z } from "zod";
 
-// Base organization validation fields
+// Base organization validation fields (shared between create and edit)
 const baseOrganizationFields = {
   name: z
     .string()
@@ -22,33 +23,44 @@ const baseOrganizationFields = {
     .min(10, "URL must be at least 10 characters")
     .max(500, "URL must not exceed 500 characters")
     .trim(),
-  status: z.enum(["active", "inactive"], {
-    error: "Please select a status",
+  status: z.enum(["ACTIVE", "INACTIVE", "active", "inactive"], {
+    error: "Please select a valid status",
   }),
   contactEmail: z
     .string()
     .email("Please enter a valid email address")
     .min(5, "Email must be at least 5 characters")
     .max(100, "Email must not exceed 100 characters")
-    .trim(),
-  subscription: z.enum(["prepaid", "postpaid"], {
-    error: "Please select a subscription type",
-  }),
+    .trim()
+    .optional(),
+  subscription: z
+    .enum(["prepaid", "postpaid"], {
+      error: "Please select a subscription type",
+    })
+    .optional(),
 };
 
-// Organization creation schema
+// Schema for creating organization (API integration)
 export const createOrganizationSchema = z.object({
-  ...baseOrganizationFields,
-  createdBy: z
+  name: z
     .string()
-    .min(2, "Created by field must be at least 2 characters")
-    .max(100, "Created by field must not exceed 100 characters")
-    .trim(),
+    .min(1, "Organization name is required")
+    .max(100, "Name must be less than 100 characters"),
+  webhookId: z
+    .string()
+    .min(1, "Webhook ID is required")
+    .max(50, "Webhook ID must be less than 50 characters"),
+  webhookUrl: z.string().url("Must be a valid URL"),
+  status: z.enum(["ACTIVE", "INACTIVE"]).default("ACTIVE"),
+  createdBy: z.string().min(1, "Created by is required"),
 });
 
-// Organization edit schema (excludes createdBy, includes all editable fields)
+// Schema for editing organization (existing components)
 export const editOrganizationSchema = z.object({
   ...baseOrganizationFields,
+  status: z.enum(["active", "inactive"], {
+    error: "Please select a status",
+  }),
 });
 
 // Organization update schema (for future use - partial updates)
@@ -72,13 +84,13 @@ export const organizationSchema = createOrganizationSchema.extend({
   updatedBy: z.string().optional(),
 });
 
-// Type exports
+// Type exports for API integration
 export type CreateOrganizationData = z.infer<typeof createOrganizationSchema>;
 export type EditOrganizationData = z.infer<typeof editOrganizationSchema>;
 export type UpdateOrganizationData = z.infer<typeof updateOrganizationSchema>;
 export type OrganizationData = z.infer<typeof organizationSchema>;
 
-// Organization interface for frontend (matches your existing data structure)
+// Organization interface for existing components (matches your current data structure)
 export interface Organization {
   id: string;
   name: string;
@@ -106,7 +118,7 @@ export const parseValidationErrors = (error: z.ZodError): FormErrors => {
   return errors;
 };
 
-// Utility function to generate webhook ID from organization name
+// Helper function to generate webhook ID from organization name
 export const generateWebhookIdFromName = (name: string): string => {
   return name
     .toLowerCase()
@@ -115,19 +127,17 @@ export const generateWebhookIdFromName = (name: string): string => {
     .substring(0, 30);
 };
 
-// Default form values for creation
+// Default values for API integration (create organization)
 export const defaultCreateOrganizationValues: Partial<CreateOrganizationData> =
   {
     name: "",
     webhookId: "",
     webhookUrl: "",
-    status: "active",
-    contactEmail: "",
-    subscription: "prepaid",
+    status: "ACTIVE",
     createdBy: "",
   };
 
-// Default form values for editing (will be populated from organization data)
+// Default form values for editing (existing components)
 export const defaultEditOrganizationValues: Partial<EditOrganizationData> = {
   name: "",
   webhookId: "",
@@ -136,3 +146,21 @@ export const defaultEditOrganizationValues: Partial<EditOrganizationData> = {
   contactEmail: "",
   subscription: "prepaid",
 };
+
+// Status options for API integration
+export const STATUS_OPTIONS = [
+  { value: "ACTIVE", label: "Active" },
+  { value: "INACTIVE", label: "Inactive" },
+] as const;
+
+// Status options for existing components
+export const EDIT_STATUS_OPTIONS = [
+  { value: "active", label: "Active" },
+  { value: "inactive", label: "Inactive" },
+] as const;
+
+// Subscription options for existing components
+export const SUBSCRIPTION_OPTIONS = [
+  { value: "prepaid", label: "Prepaid" },
+  { value: "postpaid", label: "Postpaid" },
+] as const;

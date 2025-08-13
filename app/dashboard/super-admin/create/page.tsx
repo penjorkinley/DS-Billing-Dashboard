@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useOrganizations } from "@/hooks/useOrganizations";
+import { useExternalToken } from "@/hooks/useExternalToken";
 import { useToast } from "@/lib/toast-context";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
@@ -18,13 +20,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Building2, Loader2, AlertCircle, CheckCircle } from "lucide-react";
+import { Building2, Loader2, AlertCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 import {
   createOrganizationSchema,
   parseValidationErrors,
-  generateWebhookIdFromName,
   defaultCreateOrganizationValues,
   type CreateOrganizationData,
   type FormErrors,
@@ -34,6 +35,20 @@ export default function CreateOrganizationPage() {
   const { user, loading, error, isAuthenticated } = useAuth({
     requiredRole: "SUPER_ADMIN",
   });
+
+  // API integration hooks
+  const {
+    createOrganization,
+    isLoading: isSubmitting,
+    error: apiError,
+    clearError,
+  } = useOrganizations();
+  const {
+    generateToken,
+    tokenStatus,
+    isLoading: tokenLoading,
+  } = useExternalToken();
+
   const { showToast } = useToast();
   const router = useRouter();
 
@@ -44,7 +59,6 @@ export default function CreateOrganizationPage() {
   } as CreateOrganizationData);
 
   const [formErrors, setFormErrors] = useState<FormErrors>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Update createdBy when user is loaded
   useEffect(() => {
@@ -52,6 +66,13 @@ export default function CreateOrganizationPage() {
       setFormData((prev) => ({ ...prev, createdBy: user.userid }));
     }
   }, [user?.userid, formData.createdBy]);
+
+  //  Clear API errors when form data changes
+  useEffect(() => {
+    if (apiError) {
+      clearError();
+    }
+  }, [formData, apiError, clearError]);
 
   // Handle logout
   const handleLogout = async () => {
@@ -121,9 +142,23 @@ export default function CreateOrganizationPage() {
     }
   };
 
-  // Handle form submission
+  // Handle form submission with API
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Silently check and configure external token if needed
+    if (!tokenStatus?.hasValidToken) {
+      const tokenResult = await generateToken();
+      if (!tokenResult.success) {
+        showToast({
+          type: "error",
+          title: "Service Error",
+          message:
+            "Unable to process request. Please try again or contact support.",
+        });
+        return;
+      }
+    }
 
     if (!validateForm()) {
       showToast({
@@ -134,46 +169,40 @@ export default function CreateOrganizationPage() {
       return;
     }
 
-    setIsSubmitting(true);
+    // API call
+    const result = await createOrganization(formData);
 
-    try {
-      // Generate UUID for orgId (in real app, this would be done on backend)
-      const orgId = crypto.randomUUID();
+    if (!result.success) {
+      // Handle validation errors from backend
+      if (result.errors) {
+        const backendErrors: FormErrors = {};
+        result.errors.forEach((error: any) => {
+          backendErrors[error.field as keyof CreateOrganizationData] =
+            error.message;
+        });
+        setFormErrors(backendErrors);
+      }
 
-      const payload = {
-        ...formData,
-        orgId,
-        createdAt: new Date().toISOString(),
-      };
-
-      // Simulate API call (replace with actual API endpoint)
-      console.log("Creating organization:", payload);
-
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // For now, simulate success
-      showToast({
-        type: "success",
-        title: "Organization Created",
-        message: `${formData.name} has been successfully created.`,
-        duration: 3000,
-      });
-
-      // Reset form or redirect
-      setTimeout(() => {
-        router.push("/dashboard/super-admin/organizations");
-      }, 1500);
-    } catch (error) {
-      console.error("Error creating organization:", error);
       showToast({
         type: "error",
         title: "Creation Failed",
-        message: "Failed to create organization. Please try again.",
+        message: result.message,
       });
-    } finally {
-      setIsSubmitting(false);
+      return;
     }
+
+    // Success case - keep your original success handling
+    showToast({
+      type: "success",
+      title: "Organization Created",
+      message: `${formData.name} has been successfully created.`,
+      duration: 3000,
+    });
+
+    // Reset form or redirect
+    setTimeout(() => {
+      router.push("/dashboard/super-admin/organizations");
+    }, 1500);
   };
 
   // Loading state
@@ -263,6 +292,16 @@ export default function CreateOrganizationPage() {
                     </p>
                   </CardHeader>
                   <CardContent className="px-12 pb-2 pt-2">
+                    {/* Display only critical API errors (not token status) */}
+                    {apiError && (
+                      <Alert className="mb-6 border-red-200 bg-red-50">
+                        <AlertCircle className="h-4 w-4 text-red-600" />
+                        <AlertDescription className="text-red-800">
+                          {apiError}
+                        </AlertDescription>
+                      </Alert>
+                    )}
+
                     <form onSubmit={handleSubmit} className="space-y-6">
                       {/* Organization Name */}
                       <div className="space-y-2">
@@ -282,6 +321,7 @@ export default function CreateOrganizationPage() {
                               ? "border-destructive focus:border-destructive"
                               : ""
                           }`}
+                          disabled={isSubmitting}
                         />
                         {formErrors.name && (
                           <p className="text-sm text-red-600 flex items-center gap-1">
@@ -314,10 +354,11 @@ export default function CreateOrganizationPage() {
                               ? "border-destructive focus:border-destructive"
                               : ""
                           }`}
+                          disabled={isSubmitting}
                         />
                         <p className="text-xs text-muted-foreground">
-                          Only letters, numbers, hyphens, and underscores
-                          allowed
+                          Auto-generated from organization name. Only letters,
+                          numbers, hyphens, and underscores allowed.
                         </p>
                         {formErrors.webhookId && (
                           <p className="text-sm text-red-600 flex items-center gap-1">
@@ -348,6 +389,7 @@ export default function CreateOrganizationPage() {
                               ? "border-destructive focus:border-destructive"
                               : ""
                           }`}
+                          disabled={isSubmitting}
                         />
                         {formErrors.webhookUrl && (
                           <p className="text-sm text-red-600 flex items-center gap-1">
@@ -357,7 +399,7 @@ export default function CreateOrganizationPage() {
                         )}
                       </div>
 
-                      {/* Status */}
+                      {/* Status field with updated values */}
                       <div className="space-y-2">
                         <Label htmlFor="status" className="text-sm font-medium">
                           Status *
@@ -367,6 +409,7 @@ export default function CreateOrganizationPage() {
                           onValueChange={(value) =>
                             handleInputChange("status", value)
                           }
+                          disabled={isSubmitting}
                         >
                           <SelectTrigger
                             className={`border-gray-200 cursor-pointer focus:border-primary focus:ring-primary/20 ${
@@ -379,7 +422,7 @@ export default function CreateOrganizationPage() {
                           </SelectTrigger>
                           <SelectContent className="bg-white dark:bg-gray-900 text-popover-foreground border-gray-200 dark:border-gray-700">
                             <SelectItem
-                              value="active"
+                              value="ACTIVE"
                               className="cursor-pointer"
                             >
                               <div className="flex items-center gap-2">
@@ -388,7 +431,7 @@ export default function CreateOrganizationPage() {
                               </div>
                             </SelectItem>
                             <SelectItem
-                              value="inactive"
+                              value="INACTIVE"
                               className="cursor-pointer"
                             >
                               <div className="flex items-center gap-2">
@@ -427,6 +470,7 @@ export default function CreateOrganizationPage() {
                               ? "border-destructive focus:border-destructive"
                               : ""
                           }`}
+                          disabled={isSubmitting}
                         />
                         {formErrors.createdBy && (
                           <p className="text-sm text-red-600 flex items-center gap-1">
@@ -436,32 +480,22 @@ export default function CreateOrganizationPage() {
                         )}
                       </div>
 
-                      {/* Info Alert */}
-                      <Alert className="border-blue-200 bg-blue-50">
-                        <CheckCircle className="h-4 w-4 text-blue-600" />
-                        <AlertDescription className="text-blue-800">
-                          Organization ID will be automatically generated.
-                          Creation date and time will be set to current
-                          timestamp.
-                        </AlertDescription>
-                      </Alert>
-
-                      {/* Submit Buttons */}
-                      <div className="flex justify-end gap-3 pt-6 border-t">
+                      {/* Submit Buttons with token loading states */}
+                      <div className="flex justify-end gap-3 pt-6 ">
                         <Button
                           type="button"
                           variant="outline"
                           onClick={() =>
                             router.push("/dashboard/super-admin/organizations")
                           }
-                          disabled={isSubmitting}
+                          disabled={isSubmitting || tokenLoading}
                           className="border-gray-200 hover:bg-gray-50"
                         >
                           Cancel
                         </Button>
                         <Button
                           type="submit"
-                          disabled={isSubmitting}
+                          disabled={isSubmitting || tokenLoading}
                           className="min-w-[140px] bg-green-600 hover:bg-green-700 text-white border-0"
                         >
                           {isSubmitting ? (

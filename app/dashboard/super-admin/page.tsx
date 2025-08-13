@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/hooks/useAuth";
+import { useExternalToken } from "@/hooks/useExternalToken";
 import { useToast } from "@/lib/toast-context";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
@@ -9,16 +10,90 @@ import { ChartAreaInteractive } from "@/components/chart-area-interactive";
 import { DataTable } from "@/components/data-table";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
 
 export default function SuperAdminDashboard() {
   const { user, loading, error, isAuthenticated } = useAuth({
     requiredRole: "SUPER_ADMIN",
   });
+
+  // Add external token management
+  const {
+    generateToken,
+    tokenStatus,
+    isLoading: tokenLoading,
+    error: tokenError,
+  } = useExternalToken();
+
   const { showToast } = useToast();
 
-  // Enhanced logout function with toast feedback
+  // Track auto-generation state
+  const [autoGeneratingToken, setAutoGeneratingToken] = useState(false);
+
+  // Auto-generate external token on login if not present
+  useEffect(() => {
+    if (
+      user &&
+      tokenStatus !== null &&
+      !tokenStatus.hasValidToken &&
+      !autoGeneratingToken
+    ) {
+      // console.log("Auto-generating external token for user:", user.userid);
+
+      setAutoGeneratingToken(true);
+      generateToken()
+        .then((result) => {
+          if (result.success) {
+            showToast({
+              type: "success",
+              title: "External Access Ready",
+              message: "External API access has been configured automatically.",
+              duration: 3000,
+            });
+          } else {
+            showToast({
+              type: "warning",
+              title: "External Access Issue",
+              message:
+                "Unable to configure external API access. Some features may be limited.",
+              duration: 5000,
+            });
+          }
+        })
+        .catch((err) => {
+          console.error("Token generation error:", err);
+          showToast({
+            type: "warning",
+            title: "External Access Issue",
+            message:
+              "External API configuration encountered an issue. Some features may be limited.",
+            duration: 5000,
+          });
+        })
+        .finally(() => {
+          setAutoGeneratingToken(false);
+        });
+    }
+  }, [user, tokenStatus, autoGeneratingToken, generateToken, showToast]);
+
+  // logout function with external token cleanup
   const handleLogout = async () => {
     try {
+      // Clear external token first (if available)
+      try {
+        await fetch("/api/external-token", {
+          method: "DELETE",
+          credentials: "include",
+        });
+        // console.log("External token cleared");
+      } catch (tokenError) {
+        // console.log(
+        //   "External token cleanup failed (non-critical):",
+        //   tokenError
+        // );
+      }
+
+      // Original logout logic
       const response = await fetch("/api/auth/logout", {
         method: "POST",
       });
@@ -62,14 +137,16 @@ export default function SuperAdminDashboard() {
     }
   };
 
-  // Show loading state
-  if (loading) {
+  // Show loading state (includes token generation)
+  if (loading || autoGeneratingToken) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex items-center gap-2">
           <Loader2 className="h-6 w-6 animate-spin text-brand-primary" />
           <span className="text-muted-foreground">
-            Verifying authentication...
+            {loading
+              ? "Verifying authentication..."
+              : "Configuring external access..."}
           </span>
         </div>
       </div>
