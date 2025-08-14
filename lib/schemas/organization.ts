@@ -25,18 +25,6 @@ const baseOrganizationFields = {
   status: z.enum(["ACTIVE", "INACTIVE", "active", "inactive"], {
     error: "Please select a valid status",
   }),
-  contactEmail: z
-    .string()
-    .email("Please enter a valid email address")
-    .min(5, "Email must be at least 5 characters")
-    .max(100, "Email must not exceed 100 characters")
-    .trim()
-    .optional(),
-  subscription: z
-    .enum(["prepaid", "postpaid"], {
-      error: "Please select a subscription type",
-    })
-    .optional(),
 };
 
 // Schema for creating organization (API integration)
@@ -54,7 +42,7 @@ export const createOrganizationSchema = z.object({
   createdBy: z.string().min(1, "Created by is required"),
 });
 
-// Schema for editing organization (existing components)
+// Schema for editing organization (removed email and subscription)
 export const editOrganizationSchema = z.object({
   ...baseOrganizationFields,
   status: z.enum(["active", "inactive"], {
@@ -74,30 +62,40 @@ export const updateOrganizationSchema = editOrganizationSchema
       .optional(),
   });
 
-// Full organization schema
-export const organizationSchema = createOrganizationSchema.extend({
+// Full organization schema (API response structure)
+export const organizationSchema = z.object({
   id: z.number().int().positive(),
-  orgId: z.string().uuid(),
-  createdAt: z.date(),
-  updatedAt: z.date().optional(),
-  updatedBy: z.string().optional(),
+  orgId: z.string(),
+  name: z.string(),
+  webhookId: z.string(),
+  webhookUrl: z.string(),
+  status: z.enum(["ACTIVE", "INACTIVE"]),
+  createdAt: z.string(),
+  updatedAt: z.string().nullable(),
+  createdBy: z.string(),
+  updatedBy: z.string().nullable(),
 });
 
 // Type exports for API integration
 export type CreateOrganizationData = z.infer<typeof createOrganizationSchema>;
 export type EditOrganizationData = z.infer<typeof editOrganizationSchema>;
 export type UpdateOrganizationData = z.infer<typeof updateOrganizationSchema>;
-export type OrganizationData = z.infer<typeof organizationSchema>;
+export type OrganizationApiData = z.infer<typeof organizationSchema>;
 
-// Organization interface for existing components
-export interface Organization {
+// Organization interface for display components (with dummy data)
+export interface OrganizationDisplay {
   id: string;
+  orgId: string;
   name: string;
-  shortName: string;
+  webhookId: string;
+  webhookUrl: string;
   status: "active" | "inactive";
-  revenue: number;
   createdAt: string;
-  contactEmail: string;
+  updatedAt: string | null;
+  createdBy: string;
+  updatedBy: string | null;
+  // Dummy fields for display
+  monthlyRevenue: number;
   subscription: "prepaid" | "postpaid";
 }
 
@@ -126,6 +124,35 @@ export const generateWebhookIdFromName = (name: string): string => {
     .substring(0, 30);
 };
 
+// Convert API data to display format with dummy subscription data
+export const convertToDisplayFormat = (
+  apiData: OrganizationApiData
+): OrganizationDisplay => {
+  // Generate dummy data based on org ID for consistency
+  const orgHash = apiData.orgId.split("").reduce((a, b) => {
+    a = (a << 5) - a + b.charCodeAt(0);
+    return a & a;
+  }, 0);
+
+  const monthlyRevenue = Math.abs(orgHash % 50000) + 15000; // Range: 15k-65k
+  const subscription = Math.abs(orgHash) % 2 === 0 ? "prepaid" : "postpaid";
+
+  return {
+    id: apiData.orgId, // Use orgId as display ID
+    orgId: apiData.orgId,
+    name: apiData.name,
+    webhookId: apiData.webhookId,
+    webhookUrl: apiData.webhookUrl,
+    status: apiData.status.toLowerCase() as "active" | "inactive",
+    createdAt: apiData.createdAt,
+    updatedAt: apiData.updatedAt,
+    createdBy: apiData.createdBy,
+    updatedBy: apiData.updatedBy,
+    monthlyRevenue,
+    subscription,
+  };
+};
+
 // Default values for API integration (create organization)
 export const defaultCreateOrganizationValues: Partial<CreateOrganizationData> =
   {
@@ -142,8 +169,6 @@ export const defaultEditOrganizationValues: Partial<EditOrganizationData> = {
   webhookId: "",
   webhookUrl: "",
   status: "active",
-  contactEmail: "",
-  subscription: "prepaid",
 };
 
 // Status options for API integration
@@ -156,10 +181,4 @@ export const STATUS_OPTIONS = [
 export const EDIT_STATUS_OPTIONS = [
   { value: "active", label: "Active" },
   { value: "inactive", label: "Inactive" },
-] as const;
-
-// Subscription options for existing components
-export const SUBSCRIPTION_OPTIONS = [
-  { value: "prepaid", label: "Prepaid" },
-  { value: "postpaid", label: "Postpaid" },
 ] as const;

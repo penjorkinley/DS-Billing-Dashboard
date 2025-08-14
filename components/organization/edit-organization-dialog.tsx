@@ -31,13 +31,13 @@ import {
   editOrganizationSchema,
   parseValidationErrors,
   generateWebhookIdFromName,
-  type Organization,
+  type OrganizationDisplay,
   type EditOrganizationData,
   type FormErrors,
 } from "@/lib/schemas/organization";
 
 interface EditOrganizationDialogProps {
-  organization: Organization;
+  organization: OrganizationDisplay;
   onSave: (orgId: string, updatedData: EditOrganizationData) => void;
   children?: React.ReactNode;
 }
@@ -54,8 +54,6 @@ export function EditOrganizationDialog({
     webhookId: "",
     webhookUrl: "",
     status: "active",
-    contactEmail: "",
-    subscription: "prepaid",
   });
   const [formErrors, setFormErrors] = useState<FormErrors>({});
 
@@ -64,11 +62,9 @@ export function EditOrganizationDialog({
     if (open && organization) {
       setFormData({
         name: organization.name,
-        webhookId: generateWebhookIdFromName(organization.name),
-        webhookUrl: `https://${organization.shortName.toLowerCase()}.gov.bt/webhook`,
+        webhookId: organization.webhookId,
+        webhookUrl: organization.webhookUrl,
         status: organization.status,
-        contactEmail: organization.contactEmail,
-        subscription: organization.subscription,
       });
       setFormErrors({});
     }
@@ -118,7 +114,7 @@ export function EditOrganizationDialog({
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
       // Call the parent's onSave function
-      onSave(organization.id, formData);
+      onSave(organization.orgId, formData);
 
       // Close dialog
       setOpen(false);
@@ -138,7 +134,7 @@ export function EditOrganizationDialog({
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto bg-white">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto bg-white">
         <DialogHeader className="space-y-3">
           <DialogTitle className="flex items-center gap-2 text-xl font-semibold">
             <Building2 className="h-5 w-5 text-primary" />
@@ -230,115 +226,39 @@ export function EditOrganizationDialog({
             )}
           </div>
 
-          {/* Contact Email */}
+          {/* Status */}
           <div className="space-y-2">
-            <Label htmlFor="edit-contactEmail" className="text-sm font-medium">
-              Contact Email *
+            <Label htmlFor="edit-status" className="text-sm font-medium">
+              Status *
             </Label>
-            <Input
-              id="edit-contactEmail"
-              type="email"
-              placeholder="admin@organization.com"
-              value={formData.contactEmail}
-              onChange={(e) =>
-                handleInputChange("contactEmail", e.target.value)
-              }
-              className={`border-gray-200 focus:border-primary focus:ring-primary/20 ${
-                formErrors.contactEmail
-                  ? "border-destructive focus:border-destructive"
-                  : ""
-              }`}
-            />
-            {formErrors.contactEmail && (
+            <Select
+              value={formData.status}
+              onValueChange={(value) => handleInputChange("status", value)}
+            >
+              <SelectTrigger
+                className={`border-gray-200 focus:border-primary focus:ring-primary/20 ${
+                  formErrors.status
+                    ? "border-destructive focus:border-destructive"
+                    : ""
+                }`}
+              >
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent className="bg-white dark:bg-gray-900 text-popover-foreground border-gray-200 dark:border-gray-700">
+                <SelectItem value="active" className="cursor-pointer">
+                  Active
+                </SelectItem>
+                <SelectItem value="inactive" className="cursor-pointer">
+                  Inactive
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            {formErrors.status && (
               <p className="text-sm text-red-600 flex items-center gap-1">
                 <AlertCircle className="h-3 w-3" />
-                {formErrors.contactEmail}
+                {formErrors.status}
               </p>
             )}
-          </div>
-
-          {/* Status and Subscription in a row */}
-          <div className="grid grid-cols-2 gap-4">
-            {/* Status */}
-            <div className="space-y-2">
-              <Label htmlFor="edit-status" className="text-sm font-medium">
-                Status *
-              </Label>
-              <Select
-                value={formData.status}
-                onValueChange={(value) => handleInputChange("status", value)}
-              >
-                <SelectTrigger
-                  className={`border-gray-200 cursor-pointer focus:border-primary focus:ring-primary/20 ${
-                    formErrors.status
-                      ? "border-destructive focus:border-destructive"
-                      : ""
-                  }`}
-                >
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent className="bg-white dark:bg-gray-900 text-popover-foreground border-gray-200 dark:border-gray-700">
-                  <SelectItem value="active" className="cursor-pointer">
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-green-500" />
-                      Active
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="inactive" className="cursor-pointer">
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-red-500" />
-                      Inactive
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-              {formErrors.status && (
-                <p className="text-sm text-red-600 flex items-center gap-1">
-                  <AlertCircle className="h-3 w-3" />
-                  {formErrors.status}
-                </p>
-              )}
-            </div>
-
-            {/* Subscription */}
-            <div className="space-y-2">
-              <Label
-                htmlFor="edit-subscription"
-                className="text-sm font-medium"
-              >
-                Subscription *
-              </Label>
-              <Select
-                value={formData.subscription}
-                onValueChange={(value) =>
-                  handleInputChange("subscription", value)
-                }
-              >
-                <SelectTrigger
-                  className={`border-gray-200 cursor-pointer focus:border-primary focus:ring-primary/20 ${
-                    formErrors.subscription
-                      ? "border-destructive focus:border-destructive"
-                      : ""
-                  }`}
-                >
-                  <SelectValue placeholder="Select subscription" />
-                </SelectTrigger>
-                <SelectContent className="bg-white dark:bg-gray-900 text-popover-foreground border-gray-200 dark:border-gray-700">
-                  <SelectItem value="prepaid" className="cursor-pointer">
-                    Prepaid
-                  </SelectItem>
-                  <SelectItem value="postpaid" className="cursor-pointer">
-                    Postpaid
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-              {formErrors.subscription && (
-                <p className="text-sm text-red-600 flex items-center gap-1">
-                  <AlertCircle className="h-3 w-3" />
-                  {formErrors.subscription}
-                </p>
-              )}
-            </div>
           </div>
 
           {/* Info Alert */}

@@ -1,4 +1,3 @@
-// File: components/organization/organization-card.tsx
 "use client";
 
 import { useState } from "react";
@@ -6,15 +5,25 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EditOrganizationDialog } from "@/components/organization/edit-organization-dialog";
-import { Calendar, Edit, DollarSign, FileText, Clock } from "lucide-react";
+import { useToast } from "@/lib/toast-context";
+import { copyToClipboard } from "@/lib/clipboard";
 import {
-  type Organization,
+  Calendar,
+  Edit,
+  DollarSign,
+  FileText,
+  Clock,
+  Copy,
+  CheckCircle,
+} from "lucide-react";
+import {
+  type OrganizationDisplay,
   type EditOrganizationData,
 } from "@/lib/schemas/organization";
 
-// Extended organization interface with subscription details
-export interface OrganizationWithSubscription extends Organization {
-  subscriptionDetails: {
+// Extended organization interface with subscription details for backward compatibility
+export interface OrganizationWithSubscription extends OrganizationDisplay {
+  subscriptionDetails?: {
     // For prepaid
     remainingBalance?: number;
     singleSignaturesUsed?: number;
@@ -49,12 +58,55 @@ export function OrganizationCard({
   onCardClick,
   onUpdate,
 }: OrganizationCardProps) {
+  const { showToast } = useToast();
+  const [copySuccess, setCopySuccess] = useState(false);
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-GB", {
       day: "2-digit",
       month: "short",
       year: "numeric",
     });
+  };
+
+  const formatOrgId = (orgId: string) => {
+    if (orgId.length <= 8) {
+      return orgId;
+    }
+    // Show first 4 characters + "..." + last 4 characters
+    return `${orgId.slice(0, 4)}...${orgId.slice(-4)}`;
+  };
+
+  const handleCopyOrgId = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    try {
+      const success = await copyToClipboard(organization.orgId);
+
+      if (success) {
+        setCopySuccess(true);
+        showToast({
+          type: "success",
+          title: "Copied!",
+          message: `Organization ID "${organization.orgId}" copied to clipboard`,
+          duration: 2000,
+        });
+
+        // Reset copy success state after 2 seconds
+        setTimeout(() => setCopySuccess(false), 2000);
+      } else {
+        throw new Error("Copy operation failed");
+      }
+    } catch (err) {
+      console.error("Copy error:", err);
+      showToast({
+        type: "error",
+        title: "Copy Failed",
+        message:
+          "Unable to copy to clipboard. Please try selecting and copying manually.",
+        duration: 3000,
+      });
+    }
   };
 
   return (
@@ -135,28 +187,52 @@ export function OrganizationCard({
                     Monthly Revenue
                   </p>
                   <p className="text-2xl font-bold text-gray-900">
-                    Nu. {(organization.revenue / 1000).toFixed(0)}k
+                    Nu. {organization.monthlyRevenue.toLocaleString()}
                   </p>
                 </div>
               </div>
 
-              <div className="pt-5 border-t border-gray-200">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Calendar className="h-3 w-3" />
-                  Created: {formatDate(organization.createdAt)}
+              <div className="space-y-3 text-left pt-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">
+                    Organization ID:
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <span
+                      className="font-mono text-xs px-2 py-1 "
+                      title={organization.orgId} // Show full ID on hover
+                    >
+                      {formatOrgId(organization.orgId)}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 hover:bg-gray-200"
+                      onClick={handleCopyOrgId}
+                      title="Copy Organization ID"
+                    >
+                      {copySuccess ? (
+                        <CheckCircle className="h-3 w-3 text-green-600" />
+                      ) : (
+                        <Copy className="h-3 w-3" />
+                      )}
+                    </Button>
+                  </div>
                 </div>
-              </div>
-
-              <div className="text-center text-xs text-blue-600 font-medium pt-2">
-                Click to view subscription details
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Created:</span>
+                  <span className="text-sm font-medium">
+                    {formatDate(organization.createdAt)}
+                  </span>
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Back Side */}
+        {/* Back Side - Subscription Details */}
         <Card
-          className="flip-card-back hover:shadow-xl transition-all duration-300 border-0 shadow-md"
+          className="flip-card-back border-0 shadow-md"
           style={{
             position: "absolute",
             width: "100%",
@@ -167,125 +243,103 @@ export function OrganizationCard({
             borderRadius: "12px",
           }}
         >
-          <CardHeader>
-            <CardTitle className="text-xl font-bold">
-              {organization.name}
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Subscription Details
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            <div className="text-center">
+              <div
+                className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                  organization.subscription === "prepaid"
+                    ? "bg-blue-100 text-blue-800"
+                    : "bg-purple-100 text-purple-800"
+                }`}
+              >
+                {organization.subscription === "prepaid"
+                  ? "Prepaid Plan"
+                  : "Postpaid Plan"}
+              </div>
+            </div>
+
             {organization.subscription === "prepaid" ? (
-              /* Prepaid Details - Simple */
-              <div className="space-y-4">
-                <div className="bg-gray-50 rounded-lg pb-3 ">
-                  <div className="flex items-center gap-2 mb-3">
-                    <DollarSign className="h-4 w-4 text-green-600" />
-                    <span className="text-sm font-medium">
-                      Remaining Balance
-                    </span>
-                  </div>
-                  <p className="text-2xl font-bold text-gray-900">
+              <div className="space-y-3">
+                <div className="bg-blue-50 rounded-lg p-3">
+                  <p className="text-xs text-blue-600 uppercase tracking-wide">
+                    Remaining Balance
+                  </p>
+                  <p className="text-xl font-bold text-blue-900">
                     Nu.{" "}
-                    {organization.subscriptionDetails.remainingBalance?.toLocaleString()}
+                    {(
+                      organization.subscriptionDetails?.remainingBalance ||
+                      25000
+                    ).toLocaleString()}
                   </p>
                 </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="text-center">
-                    <p className="text-xs text-muted-foreground">
-                      Single Signatures
-                    </p>
-                    <p className="text-lg font-bold">
-                      {organization.subscriptionDetails.singleSignaturesUsed?.toLocaleString()}
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Single Signs</p>
+                    <p className="font-semibold">
+                      {organization.subscriptionDetails?.singleSignaturesUsed ||
+                        150}
                     </p>
                   </div>
-                  <div className="text-center">
-                    <p className="text-xs text-muted-foreground">
-                      Multiple Signatures
+                  <div>
+                    <p className="text-muted-foreground">Multi Signs</p>
+                    <p className="font-semibold">
+                      {organization.subscriptionDetails
+                        ?.multipleSignaturesUsed || 75}
                     </p>
-                    <p className="text-lg font-bold">
-                      {organization.subscriptionDetails.multipleSignaturesUsed?.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-gray-200">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Calendar className="h-3 w-3" />
-                    Subscribed:{" "}
-                    {organization.subscriptionDetails.subscriptionDate &&
-                      formatDate(
-                        organization.subscriptionDetails.subscriptionDate
-                      )}
                   </div>
                 </div>
               </div>
             ) : (
-              /* Postpaid Details - Simple */
-              <div className="space-y-4">
-                <div className="bg-gray-50 rounded-lg pb-1 ">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Clock className="h-4 w-4 text-orange-600" />
-                    <span className="text-sm font-medium">
-                      {organization.subscriptionDetails.billingCycle &&
-                        billingCycleLabels[
-                          organization.subscriptionDetails.billingCycle
-                        ]}{" "}
-                      Billing
-                    </span>
-                  </div>
-                  <p className="text-2xl font-bold text-gray-900">
-                    Nu.{" "}
-                    {organization.subscriptionDetails.totalIncurred?.toLocaleString()}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
+              <div className="space-y-3">
+                <div className="bg-purple-50 rounded-lg p-3">
+                  <p className="text-xs text-purple-600 uppercase tracking-wide">
                     Total Incurred
                   </p>
+                  <p className="text-xl font-bold text-purple-900">
+                    Nu.{" "}
+                    {(
+                      organization.subscriptionDetails?.totalIncurred ||
+                      organization.monthlyRevenue * 3
+                    ).toLocaleString()}
+                  </p>
                 </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="text-center">
-                    <p className="text-xs text-muted-foreground">
-                      Single Signatures
-                    </p>
-                    <p className="text-lg font-bold">
-                      {organization.subscriptionDetails.singleSignaturesUsed?.toLocaleString()}
-                    </p>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      Billing Cycle:
+                    </span>
+                    <span className="font-medium">
+                      {
+                        billingCycleLabels[
+                          organization.subscriptionDetails?.billingCycle ||
+                            "quarterly"
+                        ]
+                      }
+                    </span>
                   </div>
-                  <div className="text-center">
-                    <p className="text-xs text-muted-foreground">
-                      Multiple Signatures
-                    </p>
-                    <p className="text-lg font-bold">
-                      {organization.subscriptionDetails.multipleSignaturesUsed?.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-gray-200">
-                  <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                    <div className="flex items-center gap-1 justify-start">
-                      <Calendar className="h-3 w-3" />
-                      Started:{" "}
-                      {organization.subscriptionDetails.subscriptionDate &&
-                        formatDate(
-                          organization.subscriptionDetails.subscriptionDate
-                        )}
-                    </div>
-                    <div className="flex items-center gap-1 justify-end">
-                      <Calendar className="h-3 w-3" />
-                      Ends:{" "}
-                      {organization.subscriptionDetails.subscriptionEndDate &&
-                        formatDate(
-                          organization.subscriptionDetails.subscriptionEndDate
-                        )}
-                    </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Next Bill:</span>
+                    <span className="font-medium text-sm">
+                      {organization.subscriptionDetails?.subscriptionEndDate
+                        ? formatDate(
+                            organization.subscriptionDetails.subscriptionEndDate
+                          )
+                        : "15 Feb 2024"}
+                    </span>
                   </div>
                 </div>
               </div>
             )}
 
-            <div className="text-center text-xs text-blue-600 font-medium mt-4">
-              Click to view basic details
+            <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2 border-t border-gray-200">
+              <Calendar className="h-3 w-3" />
+              <span>Since {formatDate(organization.createdAt)}</span>
             </div>
           </CardContent>
         </Card>
