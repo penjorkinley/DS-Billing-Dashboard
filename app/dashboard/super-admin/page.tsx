@@ -38,19 +38,10 @@ export default function SuperAdminDashboard() {
       !tokenStatus.hasValidToken &&
       !autoGeneratingToken
     ) {
-      // console.log("Auto-generating external token for user:", user.userid);
-
       setAutoGeneratingToken(true);
       generateToken()
         .then((result) => {
-          if (result.success) {
-            showToast({
-              type: "success",
-              title: "External Access Ready",
-              message: "External API access has been configured automatically.",
-              duration: 3000,
-            });
-          } else {
+          if (!result.success) {
             showToast({
               type: "warning",
               title: "External Access Issue",

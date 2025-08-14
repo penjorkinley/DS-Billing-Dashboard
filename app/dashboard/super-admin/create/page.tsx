@@ -55,17 +55,9 @@ export default function CreateOrganizationPage() {
   // Form state
   const [formData, setFormData] = useState<CreateOrganizationData>({
     ...defaultCreateOrganizationValues,
-    createdBy: user?.userid || "",
   } as CreateOrganizationData);
 
   const [formErrors, setFormErrors] = useState<FormErrors>({});
-
-  // Update createdBy when user is loaded
-  useEffect(() => {
-    if (user?.userid && !formData.createdBy) {
-      setFormData((prev) => ({ ...prev, createdBy: user.userid }));
-    }
-  }, [user?.userid, formData.createdBy]);
 
   //  Clear API errors when form data changes
   useEffect(() => {

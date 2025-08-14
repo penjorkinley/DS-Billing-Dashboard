@@ -1,4 +1,3 @@
-// lib/schemas/organization.ts
 import { z } from "zod";
 
 // Base organization validation fields (shared between create and edit)
@@ -75,7 +74,7 @@ export const updateOrganizationSchema = editOrganizationSchema
       .optional(),
   });
 
-// Full organization schema (including auto-generated fields)
+// Full organization schema
 export const organizationSchema = createOrganizationSchema.extend({
   id: z.number().int().positive(),
   orgId: z.string().uuid(),
@@ -90,7 +89,7 @@ export type EditOrganizationData = z.infer<typeof editOrganizationSchema>;
 export type UpdateOrganizationData = z.infer<typeof updateOrganizationSchema>;
 export type OrganizationData = z.infer<typeof organizationSchema>;
 
-// Organization interface for existing components (matches your current data structure)
+// Organization interface for existing components
 export interface Organization {
   id: string;
   name: string;
