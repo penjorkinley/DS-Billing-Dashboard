@@ -60,6 +60,7 @@ export function OrganizationCard({
 }: OrganizationCardProps) {
   const { showToast } = useToast();
   const [copySuccess, setCopySuccess] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-GB", {
@@ -109,6 +110,24 @@ export function OrganizationCard({
     }
   };
 
+  // Handle card click - only flip if dialog is not open
+  const handleCardClick = () => {
+    if (!isDialogOpen) {
+      onCardClick();
+    }
+  };
+
+  // Handle edit button click
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsDialogOpen(true);
+  };
+
+  // Handle dialog close
+  const handleDialogClose = () => {
+    setIsDialogOpen(false);
+  };
+
   return (
     <div
       className="flip-card-container group"
@@ -116,7 +135,7 @@ export function OrganizationCard({
     >
       <div
         className={`flip-card-inner ${isFlipped ? "flipped" : ""}`}
-        onClick={onCardClick}
+        onClick={handleCardClick}
         style={{
           position: "relative",
           width: "100%",
@@ -124,8 +143,9 @@ export function OrganizationCard({
           textAlign: "center",
           transition: "transform 0.6s ease-in-out",
           transformStyle: "preserve-3d",
-          cursor: "pointer",
+          cursor: isDialogOpen ? "default" : "pointer",
           transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
+          pointerEvents: isDialogOpen ? "none" : "auto",
         }}
       >
         {/* Front Side */}
@@ -147,18 +167,21 @@ export function OrganizationCard({
                   {organization.name}
                 </CardTitle>
               </div>
-              <EditOrganizationDialog
-                organization={organization}
-                onSave={onUpdate}
-              >
-                <Button
-                  variant="ghost"
-                  className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-accent"
-                  onClick={(e) => e.stopPropagation()}
+              <div style={{ pointerEvents: "auto" }}>
+                <EditOrganizationDialog
+                  organization={organization}
+                  onSave={onUpdate}
+                  onOpenChange={setIsDialogOpen}
                 >
-                  <Edit className="h-4 w-4" />
-                </Button>
-              </EditOrganizationDialog>
+                  <Button
+                    variant="ghost"
+                    className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-accent"
+                    onClick={handleEditClick}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                </EditOrganizationDialog>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -197,7 +220,10 @@ export function OrganizationCard({
                   <span className="text-muted-foreground">
                     Organization ID:
                   </span>
-                  <div className="flex items-center gap-1">
+                  <div
+                    className="flex items-center gap-1"
+                    style={{ pointerEvents: "auto" }}
+                  >
                     <span
                       className="font-mono text-xs px-2 py-1 "
                       title={organization.orgId} // Show full ID on hover
@@ -243,7 +269,7 @@ export function OrganizationCard({
             borderRadius: "12px",
           }}
         >
-          <CardHeader className="pb-3">
+          <CardHeader>
             <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
               <FileText className="h-5 w-5" />
               Subscription Details
@@ -278,7 +304,7 @@ export function OrganizationCard({
                     ).toLocaleString()}
                   </p>
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="grid grid-cols-2 gap-2 text-sm pb-2">
                   <div>
                     <p className="text-muted-foreground">Single Signs</p>
                     <p className="font-semibold">
@@ -292,6 +318,12 @@ export function OrganizationCard({
                       {organization.subscriptionDetails
                         ?.multipleSignaturesUsed || 75}
                     </p>
+                  </div>
+                </div>
+                <div className="border-t border-gray-200 pt-2">
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Calendar className="h-3 w-3" />
+                    <span>Since {formatDate(organization.createdAt)}</span>
                   </div>
                 </div>
               </div>
@@ -309,23 +341,41 @@ export function OrganizationCard({
                     ).toLocaleString()}
                   </p>
                 </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">
-                      Billing Cycle:
-                    </span>
-                    <span className="font-medium">
-                      {
-                        billingCycleLabels[
-                          organization.subscriptionDetails?.billingCycle ||
-                            "quarterly"
-                        ]
-                      }
-                    </span>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Single Signs</p>
+                    <p className="font-semibold">
+                      {organization.subscriptionDetails?.singleSignaturesUsed ||
+                        150}
+                    </p>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Next Bill:</span>
-                    <span className="font-medium text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Multi Signs</p>
+                    <p className="font-semibold">
+                      {organization.subscriptionDetails
+                        ?.multipleSignaturesUsed || 20}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Billing Cycle:</span>
+                  <span className="font-medium">
+                    {
+                      billingCycleLabels[
+                        organization.subscriptionDetails?.billingCycle ||
+                          "quarterly"
+                      ]
+                    }
+                  </span>
+                </div>
+                <div className="border-t border-gray-200 pt-2">
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      <span>Since {formatDate(organization.createdAt)}</span>
+                    </div>
+                    <span>
+                      Ends{" "}
                       {organization.subscriptionDetails?.subscriptionEndDate
                         ? formatDate(
                             organization.subscriptionDetails.subscriptionEndDate
@@ -336,11 +386,6 @@ export function OrganizationCard({
                 </div>
               </div>
             )}
-
-            <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2 border-t border-gray-200">
-              <Calendar className="h-3 w-3" />
-              <span>Since {formatDate(organization.createdAt)}</span>
-            </div>
           </CardContent>
         </Card>
       </div>

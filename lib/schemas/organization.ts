@@ -1,3 +1,4 @@
+// lib/schemas/organization.ts
 import { z } from "zod";
 
 // Base organization validation fields (shared between create and edit)
@@ -42,7 +43,22 @@ export const createOrganizationSchema = z.object({
   createdBy: z.string().min(1, "Created by is required"),
 });
 
-// Schema for editing organization (removed email and subscription)
+// Schema for updating organization (API integration) - uses same validation as create
+export const updateOrganizationApiSchema = z.object({
+  name: z
+    .string()
+    .min(1, "Organization name is required")
+    .max(100, "Name must be less than 100 characters"),
+  webhookId: z
+    .string()
+    .min(1, "Webhook ID is required")
+    .max(50, "Webhook ID must be less than 50 characters"),
+  webhookUrl: z.string().url("Must be a valid URL"),
+  status: z.enum(["ACTIVE", "INACTIVE"]).default("ACTIVE"),
+  createdBy: z.string().min(1, "Updated by is required"), // You might want to rename this field
+});
+
+// Schema for editing organization (for forms - removed email and subscription)
 export const editOrganizationSchema = z.object({
   ...baseOrganizationFields,
   status: z.enum(["active", "inactive"], {
@@ -50,7 +66,7 @@ export const editOrganizationSchema = z.object({
   }),
 });
 
-// Organization update schema (for future use - partial updates)
+// Organization update schema (for partial updates - future use)
 export const updateOrganizationSchema = editOrganizationSchema
   .partial()
   .extend({
@@ -78,6 +94,9 @@ export const organizationSchema = z.object({
 
 // Type exports for API integration
 export type CreateOrganizationData = z.infer<typeof createOrganizationSchema>;
+export type UpdateOrganizationApiData = z.infer<
+  typeof updateOrganizationApiSchema
+>;
 export type EditOrganizationData = z.infer<typeof editOrganizationSchema>;
 export type UpdateOrganizationData = z.infer<typeof updateOrganizationSchema>;
 export type OrganizationApiData = z.infer<typeof organizationSchema>;
@@ -150,6 +169,20 @@ export const convertToDisplayFormat = (
     updatedBy: apiData.updatedBy,
     monthlyRevenue,
     subscription,
+  };
+};
+
+// Convert form data to API format for updates
+export const convertFormToApiFormat = (
+  formData: EditOrganizationData,
+  updatedBy: string
+): UpdateOrganizationApiData => {
+  return {
+    name: formData.name,
+    webhookId: formData.webhookId,
+    webhookUrl: formData.webhookUrl,
+    status: formData.status.toUpperCase() as "ACTIVE" | "INACTIVE",
+    createdBy: updatedBy, // This might need to be renamed in your API
   };
 };
 

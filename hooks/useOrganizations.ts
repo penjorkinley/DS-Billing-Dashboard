@@ -11,7 +11,13 @@ interface UseOrganizationsReturn {
     data: CreateOrganizationData
   ) => Promise<CreateOrganizationResult>;
 
-  // New fetch functionality
+  // New edit functionality
+  editOrganization: (
+    orgId: string,
+    data: CreateOrganizationData
+  ) => Promise<EditOrganizationResult>;
+
+  // Existing fetch functionality
   organizations: OrganizationDisplay[];
   fetchOrganizations: () => Promise<void>;
   refetch: () => Promise<void>;
@@ -27,6 +33,13 @@ interface UseOrganizationsReturn {
 }
 
 interface CreateOrganizationResult {
+  success: boolean;
+  message: string;
+  data?: any;
+  errors?: Array<{ field: string; message: string }>;
+}
+
+interface EditOrganizationResult {
   success: boolean;
   message: string;
   data?: any;
@@ -62,7 +75,7 @@ export function useOrganizations(): UseOrganizationsReturn {
             "Content-Type": "application/json",
           },
           body: JSON.stringify(data),
-          credentials: "include", // Important for cookie-based auth
+          credentials: "include",
         });
 
         const result: ApiResponse = await response.json();
@@ -88,7 +101,6 @@ export function useOrganizations(): UseOrganizationsReturn {
           err instanceof Error
             ? err.message
             : "Failed to connect to the server. Please check your internet connection and try again.";
-
         setError(errorMessage);
         return {
           success: false,
@@ -101,7 +113,74 @@ export function useOrganizations(): UseOrganizationsReturn {
     []
   );
 
-  // New fetch organizations functionality
+  // New edit organization functionality
+  const editOrganization = useCallback(
+    async (
+      orgId: string,
+      data: CreateOrganizationData
+    ): Promise<EditOrganizationResult> => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const response = await fetch(`/api/organizations/${orgId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+          credentials: "include",
+        });
+
+        const result: ApiResponse = await response.json();
+
+        if (!response.ok) {
+          const errorMessage =
+            result.message || "Failed to update organization";
+          setError(errorMessage);
+          return {
+            success: false,
+            message: errorMessage,
+            errors: result.errors,
+          };
+        }
+
+        // Optionally update local state
+        setOrganizations((prev) =>
+          prev.map((org) =>
+            org.orgId === orgId
+              ? {
+                  ...org,
+                  ...data,
+                  status: data.status.toLowerCase() as "active" | "inactive",
+                }
+              : org
+          )
+        );
+
+        return {
+          success: true,
+          message: result.message || "Organization updated successfully",
+          data: result.data,
+        };
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error
+            ? err.message
+            : "Failed to connect to the server. Please check your internet connection and try again.";
+        setError(errorMessage);
+        return {
+          success: false,
+          message: errorMessage,
+        };
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    []
+  );
+
+  // Existing fetch all organizations functionality
   const fetchOrganizations = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -109,40 +188,38 @@ export function useOrganizations(): UseOrganizationsReturn {
     try {
       const response = await fetch("/api/organizations", {
         method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
         credentials: "include",
       });
 
-      const result = await response.json();
+      const result: ApiResponse = await response.json();
 
-      if (!response.ok || !result.success) {
-        throw new Error(
-          result.message || `Failed to fetch organizations: ${response.status}`
-        );
+      if (!response.ok) {
+        const errorMessage = result.message || "Failed to fetch organizations";
+        setError(errorMessage);
+        return;
       }
 
-      // Data is already converted to display format by the API route
-      setOrganizations(result.data);
+      setOrganizations(result.data || []);
     } catch (err) {
       const errorMessage =
-        err instanceof Error ? err.message : "Failed to fetch organizations";
+        err instanceof Error
+          ? err.message
+          : "Failed to connect to the server. Please check your internet connection and try again.";
       setError(errorMessage);
-      console.error("Error fetching organizations:", err);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
+  // Existing refetch functionality
   const refetch = useCallback(async () => {
     await fetchOrganizations();
   }, [fetchOrganizations]);
 
-  // Update organization locally (for optimistic updates)
+  // Existing local state update functionality
   const updateOrganization = useCallback(
     (orgId: string, updatedData: Partial<OrganizationDisplay>) => {
-      setOrganizations((prev: OrganizationDisplay[]) =>
+      setOrganizations((prev) =>
         prev.map((org) =>
           org.orgId === orgId ? { ...org, ...updatedData } : org
         )
@@ -152,16 +229,19 @@ export function useOrganizations(): UseOrganizationsReturn {
   );
 
   return {
-    // Existing functionality
+    // Create functionality
     createOrganization,
 
-    // New functionality
+    // Edit functionality
+    editOrganization,
+
+    // Fetch functionality
     organizations,
     fetchOrganizations,
     refetch,
     updateOrganization,
 
-    // Shared state
+    // State
     isLoading,
     error,
     clearError,

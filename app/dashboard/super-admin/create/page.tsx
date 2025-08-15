@@ -348,10 +348,7 @@ export default function CreateOrganizationPage() {
                           }`}
                           disabled={isSubmitting}
                         />
-                        <p className="text-xs text-muted-foreground">
-                          Auto-generated from organization name. Only letters,
-                          numbers, hyphens, and underscores allowed.
-                        </p>
+
                         {formErrors.webhookId && (
                           <p className="text-sm text-red-600 flex items-center gap-1">
                             <AlertCircle className="h-3 w-3" />
@@ -473,7 +470,7 @@ export default function CreateOrganizationPage() {
                       </div>
 
                       {/* Submit Buttons with token loading states */}
-                      <div className="flex justify-end gap-3 pt-6 ">
+                      <div className="flex justify-end gap-3 pt-2">
                         <Button
                           type="button"
                           variant="outline"
