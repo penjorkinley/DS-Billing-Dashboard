@@ -156,7 +156,7 @@ export function EditOrganizationDialog({
         // Close dialog
         handleOpenChange(false);
 
-        console.log("Organization updated successfully:", result.data);
+        // console.log("Organization updated successfully:", result.data);
       } else {
         // Handle API errors
         if (result.errors && result.errors.length > 0) {

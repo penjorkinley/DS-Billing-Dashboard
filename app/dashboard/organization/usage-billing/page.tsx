@@ -1,9 +1,11 @@
+// app/dashboard/organization/usage-billing/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/lib/toast-context";
+import { useOrganizationData } from "@/hooks/useOrganizationData"; // Add this import
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
@@ -21,6 +23,7 @@ import {
   TrendingUp,
   TrendingDown,
   Loader2,
+  Clock,
 } from "lucide-react";
 
 // Import your existing components
@@ -41,6 +44,14 @@ export default function UsageBillingDetailsPage() {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState("subscription");
 
+  // Add organization data hook
+  const {
+    organizationName,
+    organizationStatus,
+    loading: orgLoading,
+    error: orgError,
+  } = useOrganizationData(user?.orgId);
+
   // Get initial tab from URL params
   useEffect(() => {
     const tab = searchParams.get("tab");
@@ -48,6 +59,19 @@ export default function UsageBillingDetailsPage() {
       setActiveTab(tab);
     }
   }, [searchParams]);
+
+  // Show organization error toast if needed
+  useEffect(() => {
+    if (orgError) {
+      showToast({
+        type: "error",
+        title: "Organization Data Error",
+        message:
+          "Failed to load organization details. Some information may be incomplete.",
+        duration: 5000,
+      });
+    }
+  }, [orgError, showToast]);
 
   const handleLogout = async () => {
     try {
@@ -66,8 +90,8 @@ export default function UsageBillingDetailsPage() {
     }
   };
 
-  // Loading state
-  if (loading) {
+  // Update loading check to include organization data loading
+  if (loading || orgLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex items-center gap-2">
@@ -78,7 +102,6 @@ export default function UsageBillingDetailsPage() {
     );
   }
 
-  // Error state
   if (error || !isAuthenticated || !user) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -92,20 +115,32 @@ export default function UsageBillingDetailsPage() {
     );
   }
 
-  // Get subscription data
+  // Get mock subscription data and enhance with real organization data
   const subscriptionData = getMockSubscriptionData(user.orgId);
+
+  // Override with real organization data when available
+  const enhancedSubscriptionData = {
+    ...subscriptionData,
+    organizationName: organizationName || subscriptionData.organizationName,
+    // Convert API status to subscription status format
+    status:
+      organizationStatus === "ACTIVE"
+        ? ("active" as const)
+        : ("inactive" as const),
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "active":
-        return "bg-green-100 text-green-800";
-      case "low_balance":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-green-100 text-green-800 hover:bg-green-100";
       case "inactive":
+        return "bg-red-100 text-red-800 hover:bg-red-100";
       case "expired":
-        return "bg-red-100 text-red-800";
+        return "bg-gray-100 text-gray-800 hover:bg-gray-100";
+      case "low_balance":
+        return "bg-yellow-100 text-yellow-800 hover:bg-yellow-100";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-gray-100 text-gray-800 hover:bg-gray-100";
     }
   };
 
@@ -113,6 +148,11 @@ export default function UsageBillingDetailsPage() {
     switch (status) {
       case "active":
         return <CheckCircle className="h-4 w-4" />;
+      case "inactive":
+      case "expired":
+        return <AlertTriangle className="h-4 w-4" />;
+      case "low_balance":
+        return <Clock className="h-4 w-4" />;
       default:
         return <AlertTriangle className="h-4 w-4" />;
     }
@@ -157,7 +197,7 @@ export default function UsageBillingDetailsPage() {
             <div className="px-4 lg:px-6">
               {/* Header */}
               <div className="mb-6">
-                <h1 className="text-3xl font-bold tracking-tight">
+                <h1 className="text-3xl font-bold tracking-tight mb-2">
                   Usage & Billing Details
                 </h1>
                 <p className="text-muted-foreground">
@@ -203,10 +243,10 @@ export default function UsageBillingDetailsPage() {
                   </TabsTrigger>
                 </TabsList>
 
-                {/* Subscription Tab */}
+                {/* Subscription Tab - Updated with real organization data */}
                 <TabsContent value="subscription" className="space-y-6">
                   <div className="grid gap-6">
-                    {/* Subscription Status Card */}
+                    {/* Subscription Status Card - Now shows real organization name and status */}
                     <Card className="border-0 shadow-md">
                       <CardHeader>
                         <div className="flex items-center justify-between">
@@ -216,38 +256,42 @@ export default function UsageBillingDetailsPage() {
                             </div>
                             <div>
                               <CardTitle className="text-xl">
-                                {subscriptionData.organizationName}
+                                {enhancedSubscriptionData.organizationName}
                               </CardTitle>
                               <p className="text-sm text-muted-foreground">
-                                {subscriptionData.subscriptionType === "prepaid"
+                                {enhancedSubscriptionData.subscriptionType ===
+                                "prepaid"
                                   ? "Prepaid Plan"
                                   : "Postpaid Plan"}
                               </p>
                             </div>
                           </div>
-                          <Badge
-                            variant="secondary"
-                            className={`${getStatusColor(
-                              subscriptionData.status
-                            )} gap-1`}
-                          >
-                            {getStatusIcon(subscriptionData.status)}
-                            {subscriptionData.status
-                              .replace("_", " ")
-                              .toUpperCase()}
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            {/* Organization Status Badge - Real data from API */}
+                            <Badge
+                              variant="secondary"
+                              className={`${getStatusColor(
+                                enhancedSubscriptionData.status
+                              )} gap-1`}
+                            >
+                              {getStatusIcon(enhancedSubscriptionData.status)}
+                              {enhancedSubscriptionData.status
+                                .replace("_", " ")
+                                .toUpperCase()}
+                            </Badge>
+                          </div>
                         </div>
                       </CardHeader>
                     </Card>
 
                     {/* Detailed Subscription Information */}
-                    {subscriptionData.subscriptionType === "prepaid" ? (
+                    {enhancedSubscriptionData.subscriptionType === "prepaid" ? (
                       <PrepaidSubscriptionDetails
-                        subscriptionData={subscriptionData}
+                        subscriptionData={enhancedSubscriptionData}
                       />
                     ) : (
                       <PostpaidSubscriptionDetails
-                        subscriptionData={subscriptionData}
+                        subscriptionData={enhancedSubscriptionData}
                       />
                     )}
                   </div>
@@ -255,7 +299,7 @@ export default function UsageBillingDetailsPage() {
 
                 {/* Usage Overview Tab */}
                 <TabsContent value="usage" className="space-y-6">
-                  <UsageMetrics subscriptionData={subscriptionData} />
+                  <UsageMetrics subscriptionData={enhancedSubscriptionData} />
 
                   {/* Simple Usage Chart Placeholder */}
                   <Card className="border-0 shadow-md">
@@ -284,7 +328,7 @@ export default function UsageBillingDetailsPage() {
                 {/* Billing Rates Tab */}
                 <TabsContent value="rates" className="space-y-6">
                   <BillingInformation
-                    currentRates={subscriptionData.currentRates}
+                    currentRates={enhancedSubscriptionData.currentRates}
                   />
 
                   {/* Rate Comparison Card */}
@@ -303,42 +347,35 @@ export default function UsageBillingDetailsPage() {
                             <p className="text-2xl font-bold">
                               Nu.{" "}
                               {
-                                subscriptionData.currentRates
+                                enhancedSubscriptionData.currentRates
                                   .singleSignaturePrice
                               }
                             </p>
                           </div>
-                          <div className="text-right">
-                            <p className="text-xs text-muted-foreground">
-                              vs previous
-                            </p>
-                            <div className="flex items-center gap-1 text-sm text-green-600">
-                              <TrendingDown className="h-3 w-3" />
-                              <span>No change</span>
-                            </div>
-                          </div>
+                          <Badge
+                            variant="secondary"
+                            className="bg-green-100 text-green-800"
+                          >
+                            No Change
+                          </Badge>
                         </div>
-
                         <div className="flex items-center justify-between p-4 border rounded-lg">
                           <div>
                             <p className="font-medium">Multiple Signature</p>
                             <p className="text-2xl font-bold">
                               Nu.{" "}
                               {
-                                subscriptionData.currentRates
+                                enhancedSubscriptionData.currentRates
                                   .multipleSignaturePrice
                               }
                             </p>
                           </div>
-                          <div className="text-right">
-                            <p className="text-xs text-muted-foreground">
-                              vs previous
-                            </p>
-                            <div className="flex items-center gap-1 text-sm text-green-600">
-                              <TrendingDown className="h-3 w-3" />
-                              <span>No change</span>
-                            </div>
-                          </div>
+                          <Badge
+                            variant="secondary"
+                            className="bg-green-100 text-green-800"
+                          >
+                            No Change
+                          </Badge>
                         </div>
                       </div>
                     </CardContent>
@@ -347,143 +384,115 @@ export default function UsageBillingDetailsPage() {
 
                 {/* Usage Statistics Tab */}
                 <TabsContent value="statistics" className="space-y-6">
-                  {/* Statistics Overview */}
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    <Card className="border-0 shadow-sm">
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <p className="text-sm font-medium">Daily Average</p>
-                        </div>
-                        <p className="text-2xl font-bold mt-2">
+                  <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    {/* Daily Average */}
+                    <Card className="border-0 shadow-md">
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">
+                          Daily Average
+                        </CardTitle>
+                        <Activity className="h-4 w-4 text-muted-foreground" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">
                           {statsData.dailyAverage}
-                        </p>
+                        </div>
                         <p className="text-xs text-muted-foreground">
                           signatures per day
                         </p>
                       </CardContent>
                     </Card>
 
-                    <Card className="border-0 shadow-sm">
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-2">
-                          <Activity className="h-4 w-4 text-muted-foreground" />
-                          <p className="text-sm font-medium">Weekly Total</p>
-                        </div>
-                        <p className="text-2xl font-bold mt-2">
+                    {/* Weekly Total */}
+                    <Card className="border-0 shadow-md">
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">
+                          Weekly Total
+                        </CardTitle>
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">
                           {statsData.weeklyTotal}
-                        </p>
+                        </div>
                         <p className="text-xs text-muted-foreground">
-                          this week
+                          signatures this week
                         </p>
                       </CardContent>
                     </Card>
 
-                    <Card className="border-0 shadow-sm">
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-2">
-                          <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                          <p className="text-sm font-medium">Monthly Total</p>
-                        </div>
-                        <p className="text-2xl font-bold mt-2">
+                    {/* Monthly Total */}
+                    <Card className="border-0 shadow-md">
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">
+                          Monthly Total
+                        </CardTitle>
+                        <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">
                           {statsData.monthlyTotal}
-                        </p>
+                        </div>
                         <p className="text-xs text-muted-foreground">
-                          this month
+                          signatures this month
                         </p>
                       </CardContent>
                     </Card>
 
-                    <Card className="border-0 shadow-sm">
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-2">
-                          <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                          <p className="text-sm font-medium">Growth Rate</p>
+                    {/* Peak Usage Day */}
+                    <Card className="border-0 shadow-md">
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">
+                          Peak Usage Day
+                        </CardTitle>
+                        <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">
+                          {statsData.peakUsageDay}
                         </div>
-                        <p className="text-2xl font-bold mt-2">
-                          +{statsData.usageGrowth}%
-                        </p>
                         <p className="text-xs text-muted-foreground">
-                          vs last month
+                          highest activity day
+                        </p>
+                      </CardContent>
+                    </Card>
+
+                    {/* Most Used Service */}
+                    <Card className="border-0 shadow-md">
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">
+                          Most Used Service
+                        </CardTitle>
+                        <CreditCard className="h-4 w-4 text-muted-foreground" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-lg font-bold">
+                          {statsData.mostUsedService}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          primary service type
+                        </p>
+                      </CardContent>
+                    </Card>
+
+                    {/* Usage Growth */}
+                    <Card className="border-0 shadow-md">
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">
+                          Usage Growth
+                        </CardTitle>
+                        <TrendingUp className="h-4 w-4 text-green-600" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold text-green-600">
+                          +{statsData.usageGrowth}%
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          vs last period
                         </p>
                       </CardContent>
                     </Card>
                   </div>
-
-                  {/* Detailed Statistics */}
-                  <Card className="border-0 shadow-md">
-                    <CardHeader>
-                      <CardTitle>Usage Insights</CardTitle>
-                      <p className="text-sm text-muted-foreground">
-                        Detailed breakdown of your usage patterns
-                      </p>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid gap-6 md:grid-cols-2">
-                        <div>
-                          <h4 className="font-medium mb-3">
-                            Usage Distribution
-                          </h4>
-                          <div className="space-y-3">
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm">Single Signatures</span>
-                              <div className="flex items-center gap-2">
-                                <div className="h-2 w-24 bg-muted rounded-full overflow-hidden">
-                                  <div className="h-full w-3/4 bg-primary rounded-full"></div>
-                                </div>
-                                <span className="text-sm font-medium">75%</span>
-                              </div>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm">
-                                Multiple Signatures
-                              </span>
-                              <div className="flex items-center gap-2">
-                                <div className="h-2 w-24 bg-muted rounded-full overflow-hidden">
-                                  <div className="h-full w-1/4 bg-secondary rounded-full"></div>
-                                </div>
-                                <span className="text-sm font-medium">25%</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div>
-                          <h4 className="font-medium mb-3">Key Metrics</h4>
-                          <div className="space-y-3">
-                            <div className="flex justify-between">
-                              <span className="text-sm text-muted-foreground">
-                                Peak Usage Day
-                              </span>
-                              <span className="text-sm font-medium">
-                                {statsData.peakUsageDay}
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-sm text-muted-foreground">
-                                Most Used Service
-                              </span>
-                              <span className="text-sm font-medium">
-                                {statsData.mostUsedService}
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-sm text-muted-foreground">
-                                Last Activity
-                              </span>
-                              <span className="text-sm font-medium">
-                                {subscriptionData.lastUsageDate
-                                  ? new Date(
-                                      subscriptionData.lastUsageDate
-                                    ).toLocaleDateString()
-                                  : "N/A"}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
 
                   {/* Charts Placeholder */}
                   <Card className="border-0 shadow-md">

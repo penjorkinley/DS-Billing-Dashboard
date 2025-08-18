@@ -8,6 +8,8 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useOrganizationData } from "@/hooks/useOrganizationData";
+
 import {
   Loader2,
   CreditCard,
@@ -31,6 +33,14 @@ export default function OrganizationOverviewPage() {
   const { showToast } = useToast();
   const router = useRouter();
 
+  // Fetch real organization data
+  const {
+    organizationName,
+    organizationStatus,
+    loading: orgLoading,
+    error: orgError,
+  } = useOrganizationData(user?.orgId);
+
   const handleLogout = async () => {
     try {
       const response = await fetch("/api/auth/logout", { method: "POST" });
@@ -49,7 +59,7 @@ export default function OrganizationOverviewPage() {
   };
 
   // Loading state
-  if (loading) {
+  if (loading || orgLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex items-center gap-2">
@@ -73,10 +83,29 @@ export default function OrganizationOverviewPage() {
       </div>
     );
   }
+  // Show organization error but don't block the page
+  if (orgError) {
+    showToast({
+      type: "error",
+      title: "Organization Data Error",
+      message:
+        "Failed to load organization details. Some information may be incomplete.",
+      duration: 5000,
+    });
+  }
 
   // Get subscription data for the organization
   const subscriptionData = getMockSubscriptionData(user.orgId);
 
+  // Override organization name and status with real data if available
+  const enhancedSubscriptionData = {
+    ...subscriptionData,
+    organizationName: organizationName || subscriptionData.organizationName,
+    status:
+      organizationStatus === "ACTIVE"
+        ? ("active" as const)
+        : ("inactive" as const),
+  };
   // Calculate summary metrics
   const totalUsage =
     subscriptionData.singleSignaturesUsed +
@@ -141,10 +170,10 @@ export default function OrganizationOverviewPage() {
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h1 className="text-3xl font-bold tracking-tight mb-2">
-                    Overview
+                    Welcome, {enhancedSubscriptionData.organizationName} Admin
                   </h1>
                   <p className="text-muted-foreground">
-                    High-level summary of your organization's usage and billing
+                    Overview of your digital signature services and usage
                   </p>
                 </div>
                 <Button
@@ -164,7 +193,7 @@ export default function OrganizationOverviewPage() {
                 <Card className="border-0 shadow-md">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">
-                      Subscription
+                      Organization Status
                     </CardTitle>
                     <CreditCard className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
@@ -173,26 +202,25 @@ export default function OrganizationOverviewPage() {
                       <Badge
                         variant="secondary"
                         className={`${getStatusColor(
-                          subscriptionData.status
+                          enhancedSubscriptionData.status
                         )} gap-1`}
                       >
-                        {getStatusIcon(subscriptionData.status)}
-                        {subscriptionData.status
-                          .replace("_", " ")
-                          .toUpperCase()}
+                        {getStatusIcon(enhancedSubscriptionData.status)}
+                        {enhancedSubscriptionData.status.toUpperCase()}
                       </Badge>
                       <div>
                         <div className="text-2xl font-bold capitalize">
-                          {subscriptionData.subscriptionType}
+                          {enhancedSubscriptionData.subscriptionType}
                         </div>
                         <p className="text-xs text-muted-foreground">
-                          {subscriptionData.subscriptionType === "prepaid"
+                          {enhancedSubscriptionData.subscriptionType ===
+                          "prepaid"
                             ? `Balance: Nu. ${
-                                subscriptionData.remainingBalance?.toLocaleString() ||
+                                enhancedSubscriptionData.remainingBalance?.toLocaleString() ||
                                 0
                               }`
                             : `Current Bill: Nu. ${
-                                subscriptionData.currentBillAmount?.toLocaleString() ||
+                                enhancedSubscriptionData.currentBillAmount?.toLocaleString() ||
                                 0
                               }`}
                         </p>

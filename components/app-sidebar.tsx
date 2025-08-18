@@ -1,4 +1,5 @@
 "use client";
+import { useOrganizationData } from "@/hooks/useOrganizationData";
 
 import {
   Building2,
@@ -48,6 +49,16 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+
+interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
+  userRole?: "SUPER_ADMIN" | "ORGANIZATION_ADMIN";
+  user?: {
+    userid: string;
+    role: string;
+    orgId: string | null;
+  };
+  onLogout?: () => void;
+}
 
 // Super Admin Navigation Items
 const superAdminNavItems = [
@@ -161,6 +172,11 @@ export function AppSidebar({
   const navItems =
     userRole === "SUPER_ADMIN" ? superAdminNavItems : orgAdminNavItems;
 
+  // Fetch organization data for organization admins
+  const { organizationName, loading: orgLoading } = useOrganizationData(
+    userRole === "ORGANIZATION_ADMIN" ? user?.orgId : null
+  );
+
   const roleConfig = {
     SUPER_ADMIN: {
       icon: Shield,
@@ -171,12 +187,7 @@ export function AppSidebar({
     ORGANIZATION_ADMIN: {
       icon: Building2,
       title: "Organization Admin",
-      subtitle:
-        user?.orgId === "ORG001"
-          ? "Ministry of IT"
-          : user?.orgId === "ORG002"
-          ? "Department of Revenue"
-          : "Organization",
+      subtitle: orgLoading ? "Loading..." : organizationName || "Organization",
       color: "text-blue-600",
     },
   };
