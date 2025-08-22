@@ -12,7 +12,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import BillingHeader from "@/components/billing/billing-header";
 import OverviewCards from "@/components/billing/overview-cards";
-import ConfigurationSummary from "@/components/billing/configuration-summary";
 import PricingForm from "@/components/billing/pricing-form";
 import BillingCycles from "@/components/billing/billing-cycles";
 
@@ -247,10 +246,6 @@ export default function BillingConfigurationPage() {
                 {/* Overview */}
                 <TabsContent value="overview" className="space-y-6">
                   <OverviewCards
-                    pricing={billingConfig.pricing}
-                    enabledBillingCycles={billingConfig.enabledBillingCycles}
-                  />
-                  <ConfigurationSummary
                     pricing={billingConfig.pricing}
                     enabledBillingCycles={billingConfig.enabledBillingCycles}
                   />
