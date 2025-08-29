@@ -28,6 +28,7 @@ import {
   CheckCircle,
   Shield,
   Building2,
+  Mail,
 } from "lucide-react";
 import {
   editUserSchema,
@@ -54,6 +55,7 @@ export function EditUserDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<EditUserData>({
     userid: "",
+    email: "",
     role: ROLES.ORGANIZATION_ADMIN,
     orgId: "",
   });
@@ -64,6 +66,7 @@ export function EditUserDialog({
     if (open && user) {
       setFormData({
         userid: user.userid,
+        email: user.email,
         role: user.role,
         orgId: user.orgId || "",
       });
@@ -204,6 +207,37 @@ export function EditUserDialog({
             )}
           </div>
 
+          {/* Email Field - NEW */}
+          <div className="space-y-2">
+            <Label htmlFor="edit-email" className="text-sm font-medium">
+              Email Address *
+            </Label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                id="edit-email"
+                type="email"
+                placeholder="user@organization.bt"
+                value={formData.email}
+                onChange={(e) => handleInputChange("email", e.target.value)}
+                className={`pl-10 border-gray-200 focus:border-primary focus:ring-primary/20 ${
+                  formErrors.email
+                    ? "border-destructive focus:border-destructive"
+                    : ""
+                }`}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Email address for notifications and account recovery
+            </p>
+            {formErrors.email && (
+              <p className="text-sm text-red-600 flex items-center gap-1">
+                <AlertCircle className="h-3 w-3" />
+                {formErrors.email}
+              </p>
+            )}
+          </div>
+
           {/* Role */}
           <div className="space-y-2">
             <Label htmlFor="edit-role" className="text-sm font-medium">
@@ -279,40 +313,6 @@ export function EditUserDialog({
               )}
             </div>
           )}
-
-          {/* Current Configuration Display */}
-          <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-            <h4 className="text-sm font-medium text-gray-900">
-              Current Configuration
-            </h4>
-            <div className="space-y-1 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600">User ID:</span>
-                <span className="font-medium">{formData.userid}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Role:</span>
-                <span className="font-medium">{getCurrentRoleDisplay()}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Organization:</span>
-                <span className="font-medium">
-                  {formData.role === ROLES.SUPER_ADMIN
-                    ? "All Organizations"
-                    : formData.orgId || "N/A"}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Info Alert */}
-          <Alert className="border-blue-200 bg-blue-50">
-            <CheckCircle className="h-4 w-4 text-blue-600" />
-            <AlertDescription className="text-blue-800">
-              Password cannot be changed through this dialog. Updated timestamp
-              will be automatically set when changes are saved.
-            </AlertDescription>
-          </Alert>
 
           {/* Submit Buttons */}
           <div className="flex justify-end gap-3 pt-6 border-t">

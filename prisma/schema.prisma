@@ -11,13 +11,16 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  userid    String   @unique @db.VarChar(50)
-  password  String   @db.VarChar(255)
-  role      Role     @default(ORGANIZATION_ADMIN)
-  orgId     String?  @db.VarChar(50) // Optional for SUPER_ADMIN, required for ORGANIZATION_ADMIN
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                Int      @id @default(autoincrement())
+  userid            String   @unique @db.VarChar(50)
+  email             String   @unique @db.VarChar(255) 
+  password          String   @db.VarChar(255)
+  role              Role     @default(ORGANIZATION_ADMIN)
+  orgId             String?  @db.VarChar(50) 
+  isFirstLogin      Boolean  @default(true)        
+  passwordChangedAt DateTime?                        
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   @@map("users")
 }

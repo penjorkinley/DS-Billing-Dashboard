@@ -31,6 +31,12 @@ const baseUserFields = {
       "User ID can only contain letters, numbers, hyphens, and underscores"
     )
     .trim(),
+  email: z
+    .string()
+    .email("Please enter a valid email address")
+    .max(255, "Email must not exceed 255 characters")
+    .trim()
+    .toLowerCase(),
   role: z.enum([ROLES.SUPER_ADMIN, ROLES.ORGANIZATION_ADMIN], {
     error: "Please select a valid role",
   }),
@@ -114,9 +120,30 @@ export const changePasswordSchema = z
     path: ["confirmPassword"],
   });
 
+// First login password change schema
+export const firstLoginPasswordChangeSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Current password is required"),
+    newPassword: z
+      .string()
+      .min(8, "New password must be at least 8 characters")
+      .max(100, "New password must not exceed 100 characters"),
+    confirmPassword: z.string().min(1, "Please confirm your new password"),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "New passwords don't match",
+    path: ["confirmPassword"],
+  })
+  .refine((data) => data.currentPassword !== data.newPassword, {
+    message: "New password must be different from current password",
+    path: ["newPassword"],
+  });
+
 // Full user schema (including auto-generated fields)
 export const userSchema = editUserSchema.extend({
   id: z.number().int().positive(),
+  isFirstLogin: z.boolean(),
+  passwordChangedAt: z.date().nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
 });
@@ -125,14 +152,20 @@ export const userSchema = editUserSchema.extend({
 export type CreateUserData = z.infer<typeof createUserSchema>;
 export type EditUserData = z.infer<typeof editUserSchema>;
 export type ChangePasswordData = z.infer<typeof changePasswordSchema>;
+export type FirstLoginPasswordChangeData = z.infer<
+  typeof firstLoginPasswordChangeSchema
+>;
 export type UserData = z.infer<typeof userSchema>;
 
 // User interface for frontend display
 export interface User {
   id: number;
   userid: string;
+  email: string;
   role: UserRole;
   orgId: string | null;
+  isFirstLogin: boolean;
+  passwordChangedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -186,6 +219,7 @@ export const AVAILABLE_ORGANIZATIONS = [
 // Default form values
 export const defaultCreateUserValues: Partial<CreateUserData> = {
   userid: "",
+  email: "",
   role: ROLES.ORGANIZATION_ADMIN,
   orgId: "",
   password: "",
@@ -194,6 +228,7 @@ export const defaultCreateUserValues: Partial<CreateUserData> = {
 
 export const defaultEditUserValues: Partial<EditUserData> = {
   userid: "",
+  email: "",
   role: ROLES.ORGANIZATION_ADMIN,
   orgId: "",
 };

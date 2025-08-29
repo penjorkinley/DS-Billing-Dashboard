@@ -162,6 +162,7 @@ export default function CreateUserPage() {
     try {
       const payload = {
         userid: formData.userid,
+        email: formData.email,
         password: formData.password,
         confirmPassword: formData.confirmPassword,
         role: formData.role,
@@ -330,6 +331,37 @@ export default function CreateUserPage() {
                             {formErrors.userid}
                           </p>
                         )}
+                      </div>
+
+                      {/* Email Field */}
+                      <div className="space-y-2">
+                        <Label htmlFor="email" className="text-sm font-medium">
+                          Email Address{" "}
+                          <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                          id="email"
+                          name="email"
+                          type="email"
+                          placeholder="admin@organization.bt"
+                          value={formData.email}
+                          onChange={(e) =>
+                            handleInputChange("email", e.target.value)
+                          }
+                          className={
+                            formErrors.email ? "border-destructive" : ""
+                          }
+                          disabled={isSubmitting}
+                        />
+                        {formErrors.email && (
+                          <p className="text-sm text-destructive">
+                            {formErrors.email}
+                          </p>
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                          A welcome email with login credentials will be sent to
+                          this address.
+                        </p>
                       </div>
 
                       {/* Password */}

@@ -450,6 +450,7 @@ export default function AllUsersPage() {
                       <TableHeader>
                         <TableRow className="border-gray-200">
                           <TableHead>User ID</TableHead>
+                          <TableHead>Email</TableHead>
                           <TableHead>Role</TableHead>
                           <TableHead>Organization ID</TableHead>
                           <TableHead>Created Date</TableHead>
@@ -465,6 +466,11 @@ export default function AllUsersPage() {
                           >
                             <TableCell className="border-gray-200">
                               <div className="font-medium">{user.userid}</div>
+                            </TableCell>
+                            <TableCell className="border-gray-200">
+                              <div className="text-sm text-muted-foreground">
+                                {user.email}
+                              </div>
                             </TableCell>
                             <TableCell className="border-gray-200">
                               <Badge

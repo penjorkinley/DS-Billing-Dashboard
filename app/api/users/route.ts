@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+// app/api/users/route.ts - Updated to handle email field
 import { AuthService } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { createUserSchema } from "@/lib/schemas/user";
+import { NextRequest, NextResponse } from "next/server";
 
 // GET /api/users - Get all users
 export async function GET(request: NextRequest) {
@@ -38,8 +39,11 @@ export async function GET(request: NextRequest) {
       select: {
         id: true,
         userid: true,
+        email: true, // NEW: Include email
         role: true,
         orgId: true,
+        isFirstLogin: true, // NEW: Include first login status
+        passwordChangedAt: true, // NEW: Include password change date
         createdAt: true,
         updatedAt: true,
       },
@@ -111,9 +115,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { userid, password, role, orgId } = validationResult.data;
+    const { userid, email, password, role, orgId } = validationResult.data;
 
-    // Check if user already exists
+    // Check if user already exists (userid)
     const existingUser = await db.user.findUnique({
       where: { userid },
     });
@@ -125,9 +129,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create the user using AuthService
+    // Check if email already exists                      // NEW: Email uniqueness check
+    const existingEmail = await db.user.findUnique({
+      where: { email: email.toLowerCase() },
+    });
+
+    if (existingEmail) {
+      return NextResponse.json(
+        { success: false, message: "Email already exists" },
+        { status: 409 }
+      );
+    }
+
+    // Create the user using AuthService (now with email)
     const result = await AuthService.createUser(
       userid,
+      email, // NEW: Pass email to createUser
       password,
       role,
       role === "SUPER_ADMIN" ? null : orgId

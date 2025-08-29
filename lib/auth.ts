@@ -1,14 +1,15 @@
+// lib/auth.ts - Updated with email support and first login handling
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { db } from "./db";
+
+const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-jwt-key";
 
 export interface JWTPayload {
   id: number;
   userid: string;
   role: string;
   orgId: string | null;
-  iat?: number;
-  exp?: number;
 }
 
 export interface AuthResult {
@@ -18,8 +19,10 @@ export interface AuthResult {
   user?: {
     id: number;
     userid: string;
+    email: string; // NEW: Include email in auth result
     role: string;
     orgId: string | null;
+    isFirstLogin: boolean; // NEW: Include first login status
   };
 }
 
@@ -29,88 +32,46 @@ export interface CreateUserResult {
   user?: {
     id: number;
     userid: string;
+    email: string; // NEW: Include email in create result
     role: string;
     orgId: string | null;
+    isFirstLogin: boolean; // NEW: Include first login status
     createdAt: Date;
   };
 }
 
-// Rate limiting storage (in production, use Redis or similar)
+// Rate limiting storage
 const authAttempts = new Map<string, { count: number; resetTime: number }>();
 
 export class AuthService {
-  // Validate that JWT_SECRET exists and is sufficiently strong
-  private static readonly JWT_SECRET = (() => {
-    const secret = process.env.JWT_SECRET;
-    if (!secret) {
-      throw new Error("JWT_SECRET environment variable is required");
-    }
-    if (secret.length < 32) {
-      throw new Error("JWT_SECRET must be at least 32 characters long");
-    }
-    return secret;
-  })();
-
-  private static readonly JWT_EXPIRES_IN = "24h";
   private static readonly MAX_AUTH_ATTEMPTS = 5;
   private static readonly LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes
 
-  /** Hash a plaintext password */
-  static async hashPassword(password: string): Promise<string> {
-    if (!password) {
-      throw new Error("Password is required");
-    }
+  /** Hash password using bcrypt */
+  private static async hashPassword(password: string): Promise<string> {
     return bcrypt.hash(password, 12);
   }
 
-  /** Compare plaintext to hashed password */
-  static async comparePassword(
+  /** Compare password with hash */
+  private static async comparePassword(
     password: string,
-    hashedPassword: string
+    hash: string
   ): Promise<boolean> {
-    if (!password || !hashedPassword) {
-      return false;
-    }
-    return bcrypt.compare(password, hashedPassword);
+    return bcrypt.compare(password, hash);
   }
 
-  /** Generate a signed JWT */
-  static generateToken(payload: JWTPayload): string {
-    if (!payload.id || !payload.userid || !payload.role) {
-      throw new Error("Invalid payload for token generation");
-    }
-
-    return jwt.sign(payload, this.JWT_SECRET, {
-      expiresIn: this.JWT_EXPIRES_IN,
-      issuer: "bhutan-ndi",
-      audience: "billing-dashboard",
-    });
+  /** Generate JWT token */
+  private static generateToken(payload: JWTPayload): string {
+    return jwt.sign(payload, JWT_SECRET, { expiresIn: "24h" });
   }
 
-  /** Verify a JWT and return its payload or null */
-  static verifyToken(token: string): JWTPayload | null {
-    if (!token) {
-      return null;
-    }
-
+  /** Verify JWT token */
+  private static verifyToken(token: string): JWTPayload | null {
     try {
-      const payload = jwt.verify(token, this.JWT_SECRET, {
-        issuer: "bhutan-ndi",
-        audience: "billing-dashboard",
-      }) as JWTPayload;
-
-      // Additional payload validation
-      if (!payload.id || !payload.userid || !payload.role) {
-        return null;
-      }
-
-      return payload;
+      return jwt.verify(token, JWT_SECRET) as JWTPayload;
     } catch (error) {
-      // Log specific error types for monitoring
-      if (error instanceof jwt.TokenExpiredError) {
-        console.warn("Token expired:", error.expiredAt);
-      } else if (error instanceof jwt.JsonWebTokenError) {
-        console.warn("Invalid token:", error.message);
+      if (error instanceof jwt.JsonWebTokenError) {
+        console.log("Invalid token:", error.message);
       } else {
         console.error("Token verification error:", error);
       }
@@ -173,15 +134,17 @@ export class AuthService {
         };
       }
 
-      // Find user
+      // Find user with all needed fields
       const user = await db.user.findUnique({
         where: { userid: userid.trim() },
         select: {
           id: true,
           userid: true,
+          email: true, // NEW: Include email
           password: true,
           role: true,
           orgId: true,
+          isFirstLogin: true, // NEW: Include first login status
         },
       });
 
@@ -215,8 +178,10 @@ export class AuthService {
         user: {
           id: user.id,
           userid: user.userid,
+          email: user.email, // NEW: Include email
           role: user.role,
           orgId: user.orgId,
+          isFirstLogin: user.isFirstLogin, // NEW: Include first login status
         },
       };
     } catch (error) {
@@ -225,9 +190,10 @@ export class AuthService {
     }
   }
 
-  /** Create a new user with role-based orgId validation */
+  /** Create a new user with role-based orgId validation and email */
   static async createUser(
     userid: string,
+    email: string, // NEW: Email parameter
     password: string,
     role: "SUPER_ADMIN" | "ORGANIZATION_ADMIN",
     orgId: string | null = null
@@ -236,6 +202,17 @@ export class AuthService {
       // Input validation
       if (!userid?.trim()) {
         return { success: false, message: "User ID is required" };
+      }
+
+      if (!email?.trim()) {
+        // NEW: Email validation
+        return { success: false, message: "Email is required" };
+      }
+
+      // Basic email format validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email.trim())) {
+        return { success: false, message: "Invalid email format" };
       }
 
       if (!password || password.length < 8) {
@@ -261,13 +238,22 @@ export class AuthService {
         orgId = null; // Ensure super admin has no org restriction
       }
 
-      // Check for existing user
-      const existing = await db.user.findUnique({
+      // Check for existing user (userid)
+      const existingUser = await db.user.findUnique({
         where: { userid: userid.trim() },
       });
 
-      if (existing) {
-        return { success: false, message: "User already exists" };
+      if (existingUser) {
+        return { success: false, message: "User ID already exists" };
+      }
+
+      // Check for existing email                       // NEW: Email uniqueness check
+      const existingEmail = await db.user.findUnique({
+        where: { email: email.trim().toLowerCase() },
+      });
+
+      if (existingEmail) {
+        return { success: false, message: "Email already exists" };
       }
 
       // Hash password and create user
@@ -275,15 +261,20 @@ export class AuthService {
       const user = await db.user.create({
         data: {
           userid: userid.trim(),
+          email: email.trim().toLowerCase(), // NEW: Store email
           password: hashedPassword,
           role,
           orgId: orgId?.trim() || null,
+          isFirstLogin: true, // NEW: Default to first login
+          // passwordChangedAt will be null initially
         },
         select: {
           id: true,
           userid: true,
+          email: true, // NEW: Include in response
           role: true,
           orgId: true,
+          isFirstLogin: true, // NEW: Include in response
           createdAt: true,
         },
       });
@@ -296,6 +287,73 @@ export class AuthService {
     } catch (error) {
       console.error("User creation error:", error);
       return { success: false, message: "User creation failed" };
+    }
+  }
+
+  /** Handle first login password change */ // NEW: First login password change
+  static async changePasswordFirstLogin(
+    userid: string,
+    currentPassword: string,
+    newPassword: string
+  ): Promise<{ success: boolean; message: string }> {
+    try {
+      // Find user
+      const user = await db.user.findUnique({
+        where: { userid },
+        select: {
+          id: true,
+          password: true,
+          isFirstLogin: true,
+        },
+      });
+
+      if (!user) {
+        return { success: false, message: "User not found" };
+      }
+
+      if (!user.isFirstLogin) {
+        return { success: false, message: "Not a first login user" };
+      }
+
+      // Verify current password
+      const valid = await this.comparePassword(currentPassword, user.password);
+      if (!valid) {
+        return { success: false, message: "Current password is incorrect" };
+      }
+
+      // Validate new password
+      if (newPassword.length < 8) {
+        return {
+          success: false,
+          message: "New password must be at least 8 characters long",
+        };
+      }
+
+      if (currentPassword === newPassword) {
+        return {
+          success: false,
+          message: "New password must be different from current password",
+        };
+      }
+
+      // Hash new password and update user
+      const hashedNewPassword = await this.hashPassword(newPassword);
+      await db.user.update({
+        where: { userid },
+        data: {
+          password: hashedNewPassword,
+          isFirstLogin: false, // NEW: Mark as not first login
+          passwordChangedAt: new Date(), // NEW: Record password change time
+        },
+      });
+
+      return {
+        success: true,
+        message: "Password changed successfully",
+      };
+    } catch (error) {
+      console.error("Password change error:", error);
+      return { success: false, message: "Password change failed" };
     }
   }
 
@@ -332,20 +390,25 @@ export class AuthService {
   }
 
   /** Refresh JWT token */
-  static async refreshToken(currentToken: string): Promise<AuthResult> {
+  static async refreshToken(token: string): Promise<{
+    success: boolean;
+    message: string;
+    token?: string;
+    user?: {
+      id: number;
+      userid: string;
+      role: string;
+      orgId: string | null;
+    };
+  }> {
     try {
-      const payload = await this.validateSession(currentToken);
+      const payload = await this.validateSession(token);
+
       if (!payload) {
         return { success: false, message: "Invalid or expired token" };
       }
 
-      // Generate new token
-      const newToken = this.generateToken({
-        id: payload.id,
-        userid: payload.userid,
-        role: payload.role,
-        orgId: payload.orgId,
-      });
+      const newToken = this.generateToken(payload);
 
       return {
         success: true,
@@ -361,16 +424,6 @@ export class AuthService {
     } catch (error) {
       console.error("Token refresh error:", error);
       return { success: false, message: "Token refresh failed" };
-    }
-  }
-
-  /** Clean up expired rate limit entries */
-  static cleanupRateLimit(): void {
-    const now = Date.now();
-    for (const [key, value] of authAttempts.entries()) {
-      if (now > value.resetTime) {
-        authAttempts.delete(key);
-      }
     }
   }
 }

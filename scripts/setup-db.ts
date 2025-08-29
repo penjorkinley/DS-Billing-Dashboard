@@ -1,84 +1,105 @@
+// scripts/setup-db.ts - Corrected version for new schema
 import { AuthService } from "../lib/auth";
 import { db } from "../lib/db";
 
 async function setupDatabase() {
   try {
-    console.log("🔄 Setting up database...");
+    console.log("🔄 Setting up database with new schema...");
 
     // Create Super Admin (no orgId - can access all organizations)
+    console.log("\n👤 Creating Super Admin...");
     const superAdminResult = await AuthService.createUser(
-      "superadmin",
-      "SuperAdmin123!",
-      "SUPER_ADMIN",
-      null // Super admin doesn't belong to specific organization
+      "superadmin", // userid
+      "admin@bhutanndi.bt", // email (NEW PARAMETER)
+      "SuperAdmin123!", // password
+      "SUPER_ADMIN", // role
+      null // orgId (Super admin doesn't belong to specific organization)
     );
 
     if (superAdminResult.success) {
       console.log("✅ Super Admin created successfully");
       console.log("   User ID: superadmin");
+      console.log("   Email: admin@bhutanndi.bt");
       console.log("   Password: SuperAdmin123!");
+      console.log("   Role: SUPER_ADMIN");
       console.log("   Organization: ALL (Super Admin)");
+      console.log("   First Login:", superAdminResult.user?.isFirstLogin);
+      console.log("   Created At:", superAdminResult.user?.createdAt);
     } else {
-      console.log("⚠️  Super Admin creation:", superAdminResult.message);
+      console.log("⚠️  Super Admin creation failed:", superAdminResult.message);
+
+      // Check if user already exists
+      if (superAdminResult.message.includes("already exists")) {
+        console.log("ℹ️  Super Admin already exists, checking details...");
+
+        const existingUser = await db.user.findUnique({
+          where: { userid: "superadmin" },
+          select: {
+            userid: true,
+            email: true, // Now available after prisma generate
+            role: true,
+            orgId: true,
+            isFirstLogin: true, // Now available after prisma generate
+            createdAt: true,
+          },
+        });
+
+        if (existingUser) {
+          console.log("📋 Existing Super Admin Details:");
+          console.log("   User ID:", existingUser.userid);
+          console.log("   Email:", existingUser.email);
+          console.log("   Role:", existingUser.role);
+          console.log("   Organization:", existingUser.orgId || "ALL");
+          console.log("   First Login:", existingUser.isFirstLogin);
+          console.log("   Created At:", existingUser.createdAt);
+        }
+      }
     }
 
-    // Create Organization Admin for ORG001
-    const orgAdmin1Result = await AuthService.createUser(
-      "orgadmin1",
-      "OrgAdmin123!",
-      "ORGANIZATION_ADMIN",
-      "ORG001"
-    );
-
-    if (orgAdmin1Result.success) {
-      console.log("✅ Organization Admin (ORG001) created successfully");
-      console.log("   User ID: orgadmin1");
-      console.log("   Password: OrgAdmin123!");
-      console.log("   Organization: ORG001");
-    } else {
+    // Since Super Admin shouldn't go through subscription flow,
+    // let's set isFirstLogin to false for them
+    if (superAdminResult.success) {
       console.log(
-        "⚠️  Organization Admin (ORG001) creation:",
-        orgAdmin1Result.message
+        "\n🔧 Setting Super Admin as experienced user (not first login)..."
       );
-    }
-
-    // Create Organization Admin for ORG002
-    const orgAdmin2Result = await AuthService.createUser(
-      "orgadmin2",
-      "OrgAdmin123!",
-      "ORGANIZATION_ADMIN",
-      "ORG002"
-    );
-
-    if (orgAdmin2Result.success) {
-      console.log("✅ Organization Admin (ORG002) created successfully");
-      console.log("   User ID: orgadmin2");
-      console.log("   Password: OrgAdmin123!");
-      console.log("   Organization: ORG002");
-    } else {
-      console.log(
-        "⚠️  Organization Admin (ORG002) creation:",
-        orgAdmin2Result.message
-      );
+      await db.user.update({
+        where: { userid: "superadmin" },
+        data: {
+          isFirstLogin: false, // Super Admin doesn't need subscription flow
+          passwordChangedAt: new Date(),
+        },
+      });
+      console.log("✅ Super Admin configured for normal access");
     }
 
     console.log("\n🎉 Database setup completed!");
     console.log("\n📝 Login Credentials:");
     console.log(
-      "Super Admin    - User ID: superadmin, Password: SuperAdmin123! (Access: ALL)"
+      "Super Admin    - User ID: superadmin, Password: SuperAdmin123!"
     );
-    console.log(
-      "Org Admin 1    - User ID: orgadmin1, Password: OrgAdmin123! (Access: ORG001)"
-    );
-    console.log(
-      "Org Admin 2    - User ID: orgadmin2, Password: OrgAdmin123! (Access: ORG002)"
-    );
+    console.log("Email          - admin@bhutanndi.bt");
+    console.log("Access         - ALL organizations");
+    console.log("Login URL      - http://localhost:3000/login");
+
+    console.log("\n🔧 Next Steps:");
+    console.log("1. Start your development server: npm run dev");
+    console.log("2. Go to: http://localhost:3000/login");
+    console.log("3. Login with superadmin / SuperAdmin123!");
+    console.log("4. Go to Create Organization to test org creation");
+    console.log("5. Create Organization Admin users with email addresses");
   } catch (error) {
     console.error("❌ Database setup failed:", error);
+
+    // More detailed error logging
+    if (error instanceof Error) {
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+    }
   } finally {
     await db.$disconnect();
   }
 }
 
 // Run the setup
+console.log("🚀 Starting database setup...");
 setupDatabase();

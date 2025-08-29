@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
 import { AuthService } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { editUserSchema } from "@/lib/schemas/user";
+import { NextRequest, NextResponse } from "next/server";
 
 // PUT /api/users/[userId] - Update user
 export async function PUT(
@@ -9,9 +9,6 @@ export async function PUT(
   { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
-    // Await params before using
-    const resolvedParams = await params;
-
     // Verify authentication and check for Super Admin role
     const token = request.cookies.get("token")?.value;
 
@@ -39,9 +36,10 @@ export async function PUT(
       );
     }
 
-    // Parse user ID
-    const userId = parseInt(resolvedParams.userId);
-    if (isNaN(userId)) {
+    const { userId } = await params;
+    const userIdNum = parseInt(userId);
+
+    if (isNaN(userIdNum)) {
       return NextResponse.json(
         { success: false, message: "Invalid user ID" },
         { status: 400 }
@@ -51,7 +49,7 @@ export async function PUT(
     // Parse and validate request body
     const body = await request.json();
 
-    // Validate the input data
+    // Validate the input data using editUserSchema
     const validationResult = editUserSchema.safeParse(body);
 
     if (!validationResult.success) {
@@ -68,11 +66,11 @@ export async function PUT(
       );
     }
 
-    const { userid, role, orgId } = validationResult.data;
+    const { userid, email, role, orgId } = validationResult.data;
 
     // Check if user exists
     const existingUser = await db.user.findUnique({
-      where: { id: userId },
+      where: { id: userIdNum },
     });
 
     if (!existingUser) {
@@ -82,13 +80,13 @@ export async function PUT(
       );
     }
 
-    // Check if userid is already taken by another user
+    // Check if userid is being changed and already exists
     if (userid !== existingUser.userid) {
-      const userWithSameId = await db.user.findUnique({
+      const userWithNewId = await db.user.findUnique({
         where: { userid },
       });
 
-      if (userWithSameId && userWithSameId.id !== userId) {
+      if (userWithNewId) {
         return NextResponse.json(
           { success: false, message: "User ID already exists" },
           { status: 409 }
@@ -96,20 +94,37 @@ export async function PUT(
       }
     }
 
+    // Check if email is being changed and already exists
+    if (email.toLowerCase() !== existingUser.email?.toLowerCase()) {
+      const userWithNewEmail = await db.user.findUnique({
+        where: { email: email.toLowerCase() },
+      });
+
+      if (userWithNewEmail) {
+        return NextResponse.json(
+          { success: false, message: "Email already exists" },
+          { status: 409 }
+        );
+      }
+    }
+
     // Update user
     const updatedUser = await db.user.update({
-      where: { id: userId },
+      where: { id: userIdNum },
       data: {
         userid,
+        email: email.toLowerCase(),
         role,
         orgId: role === "SUPER_ADMIN" ? null : orgId,
-        updatedAt: new Date(),
       },
       select: {
         id: true,
         userid: true,
+        email: true,
         role: true,
         orgId: true,
+        isFirstLogin: true,
+        passwordChangedAt: true,
         createdAt: true,
         updatedAt: true,
       },
