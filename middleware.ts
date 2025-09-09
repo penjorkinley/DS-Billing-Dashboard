@@ -5,8 +5,8 @@ import { NextResponse } from "next/server";
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Check if user is authenticated (you can modify this logic)
-  const isAuthenticated = request.cookies.get("auth-token")?.value;
+  // Check if user is authenticated
+  const isAuthenticated = request.cookies.get("token")?.value;
 
   // If user is authenticated and trying to access landing page, redirect to dashboard
   if (pathname === "/" && isAuthenticated) {

@@ -1,5 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+// app/api/auth/verify/route.ts - Updated to include isFirstLogin and email
 import { AuthService } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   try {
@@ -24,13 +26,41 @@ export async function GET(request: NextRequest) {
       return response;
     }
 
+    // UPDATED: Fetch additional user data from database
+    // This is safe because validateSession already confirmed the user exists
+    const userDetails = await db.user.findUnique({
+      where: { id: payload.id },
+      select: {
+        id: true,
+        userid: true,
+        email: true,
+        role: true,
+        orgId: true,
+        isFirstLogin: true, // NEW: Include first login status
+      },
+    });
+
+    if (!userDetails) {
+      // This shouldn't happen if validateSession passed, but handle gracefully
+      console.error(`User ${payload.id} not found despite valid session`);
+      const response = NextResponse.json(
+        { success: false, message: "User account no longer exists" },
+        { status: 401 }
+      );
+      response.cookies.delete("token");
+      return response;
+    }
+
+    // Return comprehensive user data
     return NextResponse.json({
       success: true,
       user: {
-        id: payload.id,
-        userid: payload.userid,
-        role: payload.role,
-        orgId: payload.orgId,
+        id: userDetails.id,
+        userid: userDetails.userid,
+        email: userDetails.email, // NEW: Include email
+        role: userDetails.role,
+        orgId: userDetails.orgId,
+        isFirstLogin: userDetails.isFirstLogin, // NEW: Include first login status
       },
     });
   } catch (error) {

@@ -1,16 +1,20 @@
-import { useEffect, useState } from "react";
+// hooks/useAuth.ts - Updated to support first login detection and routing
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 interface User {
   id: number;
   userid: string;
+  email: string; // NEW: Include email
   role: string;
   orgId: string | null;
+  isFirstLogin: boolean; // NEW: Include first login status
 }
 
 interface UseAuthOptions {
   requiredRole?: string;
   redirectTo?: string;
+  allowFirstLogin?: boolean; // NEW: Allow first login users to access certain pages
 }
 
 export function useAuth(options: UseAuthOptions = {}) {
@@ -39,7 +43,7 @@ export function useAuth(options: UseAuthOptions = {}) {
           return;
         }
 
-        // Check role requirement
+        // UPDATED: Check role requirement with new user structure
         if (options.requiredRole && result.user.role !== options.requiredRole) {
           setError("Insufficient permissions");
 
@@ -54,7 +58,31 @@ export function useAuth(options: UseAuthOptions = {}) {
           return;
         }
 
-        setUser(result.user);
+        // NEW: Check for first login users who shouldn't access protected pages
+        // Organization Admins with isFirstLogin=true should be redirected to login page
+        // to complete the first login flow (password change + subscription setup)
+        if (
+          result.user.isFirstLogin &&
+          result.user.role === "ORGANIZATION_ADMIN" &&
+          !options.allowFirstLogin
+        ) {
+          console.log(
+            `First login user ${result.user.userid} attempted to access protected route, redirecting to login`
+          );
+          setError("Please complete your account setup");
+          router.push("/login");
+          return;
+        }
+
+        // Set user with all fields including new ones
+        setUser({
+          id: result.user.id,
+          userid: result.user.userid,
+          email: result.user.email,
+          role: result.user.role,
+          orgId: result.user.orgId,
+          isFirstLogin: result.user.isFirstLogin,
+        });
         setError(null);
       } catch (err) {
         if (!mounted) return;
@@ -73,7 +101,12 @@ export function useAuth(options: UseAuthOptions = {}) {
     return () => {
       mounted = false;
     };
-  }, [router, options.requiredRole, options.redirectTo]);
+  }, [
+    router,
+    options.requiredRole,
+    options.redirectTo,
+    options.allowFirstLogin,
+  ]);
 
   const logout = async () => {
     try {
@@ -102,7 +135,15 @@ export function useAuth(options: UseAuthOptions = {}) {
       const result = await response.json();
 
       if (result.success) {
-        setUser(result.user);
+        // UPDATED: Set user with all fields
+        setUser({
+          id: result.user.id,
+          userid: result.user.userid,
+          email: result.user.email,
+          role: result.user.role,
+          orgId: result.user.orgId,
+          isFirstLogin: result.user.isFirstLogin,
+        });
         return true;
       }
 
@@ -120,5 +161,9 @@ export function useAuth(options: UseAuthOptions = {}) {
     logout,
     refreshToken,
     isAuthenticated: !!user,
+    // NEW: Helper methods for first login detection
+    isFirstLogin: user?.isFirstLogin ?? false,
+    requiresPasswordChange:
+      user?.isFirstLogin && user?.role === "ORGANIZATION_ADMIN",
   };
 }
