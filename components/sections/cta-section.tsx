@@ -51,22 +51,51 @@ export function CTASection() {
         }`}
       >
         <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6">
-          Ready to Transform Your Document Workflow?
+          Ready to Experience the Future of Digital Trust?
         </h2>
 
         <p className="text-xl md:text-2xl text-white/90 mb-8 leading-relaxed">
-          Join hundreds of organizations already using Bhutan NDI Digital
-          Signature Platform
+          Join organizations across Bhutan already using the world's first
+          DID-powered Digital Signature Platform for secure, verifiable, and
+          legally robust document signing
         </p>
 
-        <Button
-          onClick={() => router.push("/login")}
-          size="lg"
-          className="bg-white text-ndi-primary hover:bg-gray-100 hover:text-ndi-secondary font-bold transition-all duration-300 transform hover:scale-110 hover:shadow-2xl group px-8 py-4 text-lg"
-        >
-          Get Started Today
-          <ArrowRight className="ml-2 h-6 w-6 transition-transform duration-300 group-hover:translate-x-2" />
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-12">
+          <Button
+            onClick={() => router.push("/login")}
+            size="lg"
+            className="bg-white text-ndi-primary hover:bg-gray-100 hover:text-ndi-secondary font-bold transition-all duration-300 transform hover:scale-110 hover:shadow-2xl group px-8 py-4 text-lg"
+          >
+            Get Started Today
+            <ArrowRight className="ml-2 h-6 w-6 transition-transform duration-300 group-hover:translate-x-2" />
+          </Button>
+          <Button
+            variant="outline"
+            size="lg"
+            className="border-white text-white hover:bg-white hover:text-ndi-primary font-semibold transition-all duration-300 transform hover:scale-110 px-8 py-4 text-lg"
+            onClick={() => router.push("/login")}
+          >
+            Learn More
+          </Button>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-8 text-center">
+          <div>
+            <div className="text-2xl font-bold text-white mb-1">100%</div>
+            <div className="text-white/80 text-sm">Verifiable Signatures</div>
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-white mb-1">
+              World's First
+            </div>
+            <div className="text-white/80 text-sm">DID-Powered Platform</div>
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-white mb-1">Government</div>
+            <div className="text-white/80 text-sm">Grade Security</div>
+          </div>
+        </div>
 
         {/* Decorative elements */}
         <div className="mt-12 flex justify-center space-x-8 opacity-70">

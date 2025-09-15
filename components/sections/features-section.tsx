@@ -31,29 +31,29 @@ export function FeaturesSection() {
       icon: Lock,
       title: "Uncompromising Security",
       description:
-        "NDI wallet verification, document integrity protection, and cryptographic signatures ensure maximum security.",
+        "NDI wallet verification, document integrity protection, and cryptographic signatures ensure maximum security beyond traditional e-signature systems.",
       hoverType: "scale",
     },
     {
       icon: CheckCircle,
-      title: "Consent-Driven Process",
+      title: "Legally Robust & Permanent",
       description:
-        "Full user control with transparent workflows and authorized access only for verified signatories.",
-      hoverType: "scale", // Changed to match others
+        "Every signature carries both visual assurance and cryptographic strength, ensuring contracts remain legally robust and permanently verifiable years into the future.",
+      hoverType: "scale",
     },
     {
       icon: Smartphone,
-      title: "Mobile Optimized",
+      title: "Mobile Optimized Experience",
       description:
-        "QR code functionality and responsive design enable seamless mobile device integration.",
+        "QR code functionality and responsive design enable seamless mobile device integration for signing anywhere, anytime.",
       hoverType: "scale",
     },
     {
       icon: Shield,
-      title: "Dual Signature Technology",
+      title: "Next-Generation Technology",
       description:
-        "Combines visual e-signatures with cryptographic digital signatures for complete authentication.",
-      hoverType: "scale", // Changed to match others
+        "Built on revolutionary e-signature technologies that move beyond conventional methods, setting new standards for digital trust and authentication.",
+      hoverType: "scale",
     },
   ];
 
@@ -70,10 +70,11 @@ export function FeaturesSection() {
           }`}
         >
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Key Features & Benefits
+            Beyond Traditional E-Signatures
           </h2>
           <p className="text-xl text-gray-600">
-            Government-grade security meets user-friendly design
+            A leap forward in digital trust that ensures authenticity today and
+            years into the future
           </p>
         </div>
 
@@ -86,23 +87,29 @@ export function FeaturesSection() {
                   ? "opacity-100 translate-y-0"
                   : "opacity-0 translate-y-8"
               }`}
-              style={{ transitionDelay: `${index * 100}ms` }}
+              style={{ transitionDelay: `${index * 150}ms` }}
             >
-              <CardContent className="p-6 relative z-10">
-                <div className="w-12 h-12 gradient-ndi rounded-lg flex items-center justify-center mb-4 transition-all duration-500 group-hover:scale-125">
-                  <feature.icon className="h-6 w-6 text-white" />
+              {/* Subtle background gradient on hover */}
+              <div className="absolute inset-0 bg-gradient-to-br from-ndi-primary/5 to-ndi-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+
+              <CardContent className="p-8 relative z-10">
+                <div className="mb-6">
+                  <div className="w-16 h-16 bg-gradient-to-r from-ndi-primary to-ndi-secondary rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                    <feature.icon className="h-8 w-8 text-white" />
+                  </div>
                 </div>
 
-                <h3 className="text-lg font-bold text-gray-900 mb-3 transition-colors duration-300 group-hover:text-ndi-primary">
+                <h3 className="text-xl font-bold text-gray-900 mb-4 group-hover:text-ndi-primary transition-colors duration-300">
                   {feature.title}
                 </h3>
 
-                <p className="text-sm text-gray-600 transition-colors duration-300 group-hover:text-gray-700">
+                <p className="text-gray-600 leading-relaxed group-hover:text-gray-700 transition-colors duration-300">
                   {feature.description}
                 </p>
 
-                {/* Pulse indicator - consistent for all cards */}
-                <div className="absolute top-4 right-4 w-2 h-2 bg-ndi-primary rounded-full opacity-0 group-hover:opacity-100 transition-all duration-500 animate-pulse"></div>
+                {/* Hover effect particles */}
+                <div className="absolute top-4 right-4 w-2 h-2 bg-ndi-secondary rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-bounce"></div>
+                <div className="absolute bottom-4 left-4 w-1 h-1 bg-ndi-primary rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700 animate-ping"></div>
               </CardContent>
             </Card>
           ))}

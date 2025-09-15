@@ -3,10 +3,22 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
-import { CheckCircle, Clock, CreditCard } from "lucide-react";
+import { CheckCircle, FileText, Shield } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+interface Plan {
+  tier: string;
+  price: string;
+  quantity: string;
+  overageRate: string;
+  features: string[];
+  gradient: string;
+  isElite?: boolean;
+}
 
 export function PricingSection() {
   const [isVisible, setIsVisible] = useState(false);
+  const [activeTab, setActiveTab] = useState("signatures");
   const sectionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -26,106 +38,295 @@ export function PricingSection() {
     return () => observer.disconnect();
   }, []);
 
-  const pricingOptions = [
+  const signaturePlans: Plan[] = [
     {
-      icon: CreditCard,
-      title: "Prepaid",
-      subtitle: "Buy signatures upfront and use anytime",
+      tier: "Basic",
+      price: "100,000",
+      quantity: "20,000",
+      overageRate: "5",
       features: [
-        "Nu. 5 per signature (all types)",
-        "Pay once, use anytime",
-        "No expiry on purchased signatures",
-        "Bulk purchase options available",
+        "20,000 signatures included",
+        "Nu. 5 per additional signature",
       ],
-      note: "Purchase signature credits in advance - perfect for predictable usage",
       gradient: "from-ndi-primary to-ndi-secondary",
     },
     {
-      icon: Clock,
-      title: "Enterprise (Postpaid)",
-      subtitle: "Subscribe with validity period, pay for actual usage",
+      tier: "Plus",
+      price: "200,000",
+      quantity: "50,000",
+      overageRate: "4",
       features: [
-        "Nu. 5 per signature (all types)",
-        "Subscribe with custom end date",
-        "Pay only for signatures used",
-        "Perfect for variable usage patterns",
+        "50,000 signatures included",
+        "Nu. 4 per additional signature",
       ],
-      note: "Subscribe till your preferred date and pay based on actual usage",
       gradient: "from-ndi-secondary to-ndi-primary",
+    },
+    {
+      tier: "Premium",
+      price: "300,000",
+      quantity: "100,000",
+      overageRate: "3",
+      features: [
+        "100,000 signatures included",
+        "Nu. 3 per additional signature",
+      ],
+      gradient: "from-ndi-primary to-ndi-secondary",
+    },
+    {
+      tier: "Elite",
+      price: "800,000",
+      quantity: "Unlimited",
+      overageRate: "0",
+      features: ["Unlimited signatures", "No overage charges"],
+      gradient: "from-gray-800 to-gray-900",
+      isElite: true,
     },
   ];
 
+  const verificationPlans: Plan[] = [
+    {
+      tier: "Basic",
+      price: "10,000",
+      quantity: "500",
+      overageRate: "20",
+      features: [
+        "500 verifications included",
+        "Nu. 20 per additional verification",
+      ],
+      gradient: "from-ndi-primary to-ndi-secondary",
+    },
+    {
+      tier: "Plus",
+      price: "20,000",
+      quantity: "2,000",
+      overageRate: "10",
+      features: [
+        "2,000 verifications included",
+        "Nu. 10 per additional verification",
+      ],
+      gradient: "from-ndi-secondary to-ndi-primary",
+    },
+    {
+      tier: "Premium",
+      price: "35,000",
+      quantity: "5,000",
+      overageRate: "7",
+      features: [
+        "5,000 verifications included",
+        "Nu. 7 per additional verification",
+      ],
+      gradient: "from-ndi-primary to-ndi-secondary",
+    },
+    {
+      tier: "Elite",
+      price: "50,000",
+      quantity: "Unlimited",
+      overageRate: "0",
+      features: ["Unlimited verifications", "No overage charges"],
+      gradient: "from-gray-800 to-gray-900",
+      isElite: true,
+    },
+  ];
+
+  const currentPlans: Plan[] =
+    activeTab === "signatures" ? signaturePlans : verificationPlans;
+
   return (
-    <section ref={sectionRef} className="py-16 bg-white" id="pricing">
+    <section
+      ref={sectionRef}
+      className="py-20 bg-gradient-to-b from-gray-50/50 to-white"
+      id="pricing"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div
           className={`text-center mb-16 transition-all duration-1000 ${
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
           }`}
         >
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Flexible Subscription Models
+          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+            Choose Your Plan
           </h2>
-          <p className="text-xl text-gray-600">
-            Choose the billing model that best fits your organization's needs
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-12">
+            Flexible annual subscriptions designed to scale with your
+            organization's needs
           </p>
+
+          {/* Modern Service Category Tabs */}
+          <div className="inline-flex bg-white rounded-2xl p-2 shadow-lg border border-gray-100 mb-12">
+            <button
+              onClick={() => setActiveTab("signatures")}
+              className={`flex items-center px-8 py-4 rounded-xl font-semibold transition-all duration-300 ${
+                activeTab === "signatures"
+                  ? "bg-ndi-primary text-white shadow-lg transform scale-105"
+                  : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+              }`}
+            >
+              <FileText className="h-5 w-5 mr-3" />
+              Digital Signatures
+            </button>
+            <button
+              onClick={() => setActiveTab("verifications")}
+              className={`flex items-center px-8 py-4 rounded-xl font-semibold transition-all duration-300 ${
+                activeTab === "verifications"
+                  ? "bg-ndi-primary text-white shadow-lg transform scale-105"
+                  : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+              }`}
+            >
+              <Shield className="h-5 w-5 mr-3" />
+              Verifications
+            </button>
+          </div>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-          {pricingOptions.map((option, index) => (
+        <div className="grid lg:grid-cols-4 md:grid-cols-2 gap-8">
+          {currentPlans.map((plan, index) => (
             <Card
-              key={index}
-              className={`border-0 shadow-xl relative overflow-hidden group hover:shadow-2xl transition-all duration-700 transform hover:-translate-y-4 hover:scale-105 ${
+              key={plan.tier}
+              className={`relative overflow-hidden border-0 bg-white transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 ${
+                plan.isElite
+                  ? "bg-gradient-to-b from-gray-900 to-gray-800 text-white"
+                  : "shadow-md hover:shadow-xl"
+              } ${
                 isVisible
-                  ? "opacity-100 translate-x-0"
-                  : `opacity-0 ${
-                      index === 0 ? "-translate-x-8" : "translate-x-8"
-                    }`
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 translate-y-8"
               }`}
-              style={{ transitionDelay: `${index * 200}ms` }}
+              style={{ transitionDelay: `${index * 100}ms` }}
             >
-              {/* Background gradient with scale effect */}
-              <div
-                className={`absolute inset-0 bg-gradient-to-br ${option.gradient} transition-transform duration-700 group-hover:scale-110`}
-              ></div>
-
-              {/* Animated overlay */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
-
-              <div className="relative z-10 p-8 text-white">
-                <div className="flex items-center space-x-3 mb-4">
-                  <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm transition-all duration-500 group-hover:scale-125">
-                    <option.icon className="h-8 w-8" />
+              <div className="p-8">
+                {/* Plan header */}
+                <div className="text-center mb-8">
+                  <h3
+                    className={`text-2xl font-bold mb-4 ${
+                      plan.isElite ? "text-white" : "text-gray-900"
+                    }`}
+                  >
+                    {plan.tier}
+                  </h3>
+                  <div
+                    className={`text-5xl font-bold mb-2 ${
+                      plan.isElite ? "text-white" : "text-gray-900"
+                    }`}
+                  >
+                    Nu. {plan.price}
                   </div>
-                  <h3 className="text-2xl font-bold">{option.title}</h3>
+                  <div
+                    className={`text-sm ${
+                      plan.isElite ? "text-gray-400" : "text-gray-500"
+                    }`}
+                  >
+                    per year
+                  </div>
                 </div>
 
-                <p className="text-lg mb-6 opacity-90 group-hover:opacity-100 transition-opacity duration-300">
-                  {option.subtitle}
-                </p>
+                {/* Quantity highlight */}
+                <div
+                  className={`text-center mb-8 p-6 rounded-2xl ${
+                    plan.isElite
+                      ? "bg-white/10 border border-white/20"
+                      : "bg-gradient-to-r from-ndi-primary/5 to-ndi-secondary/5 border border-ndi-primary/10"
+                  }`}
+                >
+                  <div
+                    className={`text-3xl font-bold mb-2 ${
+                      plan.isElite ? "text-white" : "text-ndi-primary"
+                    }`}
+                  >
+                    {plan.quantity}
+                  </div>
+                  <div
+                    className={`text-sm font-medium ${
+                      plan.isElite ? "text-gray-300" : "text-gray-600"
+                    }`}
+                  >
+                    {activeTab === "signatures"
+                      ? "signatures included"
+                      : "verifications included"}
+                  </div>
+                  {plan.overageRate !== "0" && (
+                    <div
+                      className={`text-xs mt-2 ${
+                        plan.isElite ? "text-gray-400" : "text-gray-500"
+                      }`}
+                    >
+                      Nu. {plan.overageRate} per additional
+                    </div>
+                  )}
+                </div>
 
-                <div className="space-y-3 mb-6">
-                  {option.features.map((feature, featureIndex) => (
+                {/* Features list */}
+                <div className="space-y-4 mb-8">
+                  {plan.features.map((feature, featureIndex) => (
                     <div
                       key={featureIndex}
-                      className="flex items-center space-x-3 group/item transition-all duration-300 hover:translate-x-2"
+                      className="flex items-start space-x-3"
                     >
-                      <CheckCircle className="h-4 w-4 flex-shrink-0 transition-transform duration-200 group-hover/item:scale-125" />
-                      <span className="text-sm">{feature}</span>
+                      <CheckCircle
+                        className={`h-5 w-5 mt-0.5 flex-shrink-0 ${
+                          plan.isElite ? "text-green-400" : "text-ndi-secondary"
+                        }`}
+                      />
+                      <span
+                        className={`text-sm leading-relaxed ${
+                          plan.isElite ? "text-gray-300" : "text-gray-600"
+                        }`}
+                      >
+                        {feature}
+                      </span>
                     </div>
                   ))}
                 </div>
 
-                <div className="bg-white/20 backdrop-blur-sm p-4 rounded-lg border border-white/30 transition-all duration-500 group-hover:bg-white/30 group-hover:transform group-hover:scale-105">
-                  <p className="text-xs">{option.note}</p>
-                </div>
-
-                {/* Floating elements */}
-                <div className="absolute top-6 right-6 w-3 h-3 bg-white/30 rounded-full animate-pulse"></div>
-                <div className="absolute bottom-20 right-8 w-2 h-2 bg-white/20 rounded-full animate-ping"></div>
+                {/* CTA Button */}
+                <Button
+                  className={`w-full py-4 rounded-xl font-semibold text-base transition-all duration-300 transform hover:scale-105 ${
+                    plan.isElite
+                      ? "bg-white text-gray-900 hover:bg-gray-100 shadow-lg"
+                      : "bg-gray-900 text-white hover:bg-gray-800 shadow-md"
+                  }`}
+                >
+                  Get Started with {plan.tier}
+                </Button>
               </div>
+
+              {/* Decorative elements for non-elite plans */}
+              {!plan.isElite && (
+                <div className="absolute top-4 right-4 w-20 h-20 bg-gradient-to-br from-ndi-primary/10 to-ndi-secondary/10 rounded-full blur-2xl"></div>
+              )}
             </Card>
           ))}
+        </div>
+
+        {/* Bottom info section */}
+        <div className="mt-16 text-center">
+          <div className="inline-flex items-center justify-center space-x-8 bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-ndi-primary">
+                Mix & Match
+              </div>
+              <div className="text-sm text-gray-600">
+                Different tiers for each service
+              </div>
+            </div>
+            <div className="w-px h-12 bg-gray-200"></div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-ndi-primary">
+                Annual Billing
+              </div>
+              <div className="text-sm text-gray-600">
+                Predictable pricing structure
+              </div>
+            </div>
+            <div className="w-px h-12 bg-gray-200"></div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-ndi-primary">
+                No Setup Fee
+              </div>
+              <div className="text-sm text-gray-600">
+                Start using immediately
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>

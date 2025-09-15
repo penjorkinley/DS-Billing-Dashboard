@@ -36,29 +36,30 @@ export function HeroSection({ onScrollToSection }: HeroSectionProps) {
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
           }`}
         >
-          <Badge
+          {/* <Badge
             variant="secondary"
             className="mb-6 bg-ndi-secondary/10 text-ndi-primary border-ndi-secondary/20 hover:bg-ndi-secondary/20 transition-all duration-300 transform hover:scale-105"
           >
-            🇧🇹 Government Approved Digital Signature Solution
-          </Badge>
+            🇧🇹 World's First DID-Powered Digital Signature Platform
+          </Badge> */}
 
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-6 leading-tight">
-            Secure{" "}
+            The Future of{" "}
             <span className="relative">
-              <span className="text-gradient-ndi">Digital Signatures</span>
+              <span className="text-gradient-ndi">Digital Trust</span>
               <div
                 className="absolute -bottom-2 left-0 right-0 h-1 bg-gradient-ndi rounded-full transform scale-x-0 animate-scale-in"
                 style={{ animationDelay: "1s", animationFillMode: "forwards" }}
               ></div>
             </span>{" "}
-            for Bhutan
+            is Here
           </h1>
 
           <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-4xl mx-auto leading-relaxed">
-            Transform your document signing process with blockchain-powered
-            security, NDI wallet integration, and legally compliant digital
-            workflows trusted by government and enterprises.
+            Bhutan NDI launches Digital Signature Platform combining{" "}
+            <strong>decentralized identity (DID)</strong> with cryptographic
+            verification, positioning Bhutan at the forefront of trusted digital
+            ecosystems.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16">
@@ -67,7 +68,7 @@ export function HeroSection({ onScrollToSection }: HeroSectionProps) {
               size="lg"
               className="bg-ndi-primary hover:bg-ndi-secondary text-white transition-all duration-300 ease-in-out transform hover:scale-110 hover:shadow-2xl group px-8 py-4 text-lg"
             >
-              Explore Features
+              Explore Innovations
               <ArrowRight className="ml-2 h-5 w-5 transition-transform duration-300 group-hover:translate-x-2" />
             </Button>
             <Button
@@ -76,7 +77,7 @@ export function HeroSection({ onScrollToSection }: HeroSectionProps) {
               size="lg"
               className="border-ndi-primary text-ndi-primary hover:bg-ndi-primary hover:text-white transition-all duration-300 ease-in-out transform hover:scale-110 px-8 py-4 text-lg"
             >
-              View Pricing
+              View Pricing Plans
             </Button>
           </div>
 
